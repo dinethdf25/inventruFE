@@ -119,7 +119,7 @@ export const DashboardPage = () => {
                     />
                     <Tooltip 
                       contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text)' }}
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Value']}
+                      formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Value']}
                     />
                     <Area type="monotone" dataKey="totalValue" stroke="currentColor" fillOpacity={1} fill="url(#colorValue)" className="text-primary" strokeWidth={2} />
                   </AreaChart>

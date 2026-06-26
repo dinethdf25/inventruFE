@@ -24,7 +24,7 @@ export const AdjustmentForm = ({ onSubmit, onCancel, isLoading }: AdjustmentForm
   const productOptions = [
     { label: '-- Select a Product --', value: '' },
     ...products.map(p => ({
-      label: `${p.name} (${p.sku})`,
+      label: `${p.name} (${(p as any).sku || p.id})`,
       value: p.id
     }))
   ];

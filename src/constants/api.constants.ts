@@ -65,5 +65,9 @@ export const API = {
   },
   ANALYTICS: {
     MONTHLY: '/analytics/monthly', // GET
+  },
+  ALERTS: {
+    BASE: '/alerts',
+    RESOLVE: (id: string | number) => `/alerts/${id}/resolve`
   }
 };
