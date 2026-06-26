@@ -1,0 +1,269 @@
+import { useState, useMemo } from 'react';
+import { Plus, Trash2, Layers, AlertTriangle } from 'lucide-react';
+import { useBatches } from '@/hooks/useBatches';
+import { useProducts } from '@/hooks/useProducts';
+import { Batch } from '@/types';
+import { DataTable, Column } from '@/components/composite/DataTable';
+import { Modal } from '@/components/composite/Modal';
+import { ConfirmDialog } from '@/components/composite/ConfirmDialog';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { SearchBar } from '@/components/composite/SearchBar';
+import { BatchForm } from './components/BatchForm';
+
+export const BatchesPage = () => {
+  const { batches, loading, createBatch, spoilBatch, recallBatch } = useBatches();
+  const { products } = useProducts();
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Modals state
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isSpoilModalOpen, setIsSpoilModalOpen] = useState(false);
+  const [isRecallModalOpen, setIsRecallModalOpen] = useState(false);
+  
+  // Selected batch for actions
+  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Map product names onto batches since backend might only return productId
+  const enrichedBatches = useMemo(() => {
+    return batches.map(batch => {
+      if (batch.productName) return batch;
+      const product = products.find(p => p.id === batch.productId);
+      return { ...batch, productName: product ? product.name : 'Unknown Product' };
+    });
+  }, [batches, products]);
+
+  // Derived filtered batches
+  const filteredBatches = useMemo(() => {
+    return enrichedBatches.filter(b => 
+      b.productName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [enrichedBatches, searchTerm]);
+
+  // Handlers
+  const handleCreate = () => {
+    setIsFormModalOpen(true);
+  };
+
+  const handleSpoilClick = (batch: Batch) => {
+    setSelectedBatch(batch);
+    setIsSpoilModalOpen(true);
+  };
+
+  const handleRecallClick = (batch: Batch) => {
+    setSelectedBatch(batch);
+    setIsRecallModalOpen(true);
+  };
+
+  const handleFormSubmit = async (data: Partial<Batch>) => {
+    setIsSubmitting(true);
+    // Automatically set status based on expiry date
+    const expiry = new Date(data.expiryDate as string).getTime();
+    const now = new Date().getTime();
+    const daysUntilExpiry = (expiry - now) / (1000 * 60 * 60 * 24);
+    
+    let status: 'FRESH' | 'EXPIRING_SOON' | 'EXPIRED' = 'FRESH';
+    if (daysUntilExpiry <= 0) status = 'EXPIRED';
+    else if (daysUntilExpiry <= 30) status = 'EXPIRING_SOON';
+    
+    const success = await createBatch({ ...data, status });
+    
+    setIsSubmitting(false);
+    if (success) {
+      setIsFormModalOpen(false);
+    }
+  };
+
+  const handleConfirmSpoil = async () => {
+    if (!selectedBatch) return;
+    setIsSubmitting(true);
+    const success = await spoilBatch(selectedBatch.id as string);
+    setIsSubmitting(false);
+    if (success) {
+      setIsSpoilModalOpen(false);
+    }
+  };
+
+  const handleConfirmRecall = async () => {
+    if (!selectedBatch) return;
+    setIsSubmitting(true);
+    const success = await recallBatch(selectedBatch.id as string);
+    setIsSubmitting(false);
+    if (success) {
+      setIsRecallModalOpen(false);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'FRESH': return <Badge variant="success">Fresh</Badge>;
+      case 'EXPIRING_SOON': return <Badge variant="warning">Expiring Soon</Badge>;
+      case 'EXPIRED': return <Badge variant="danger">Expired</Badge>;
+      default: return <Badge variant="muted">{status}</Badge>;
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const columns: Column[] = [
+    {
+      key: 'productName',
+      label: 'Product',
+      sortable: true,
+      render: (value) => <span className="font-medium text-text">{value}</span>,
+    },
+    {
+      key: 'batchNumber',
+      label: 'Batch No.',
+      sortable: true,
+    },
+    { 
+      key: 'quantity', 
+      label: 'Qty', 
+      sortable: true 
+    },
+    {
+      key: 'locationId',
+      label: 'Location',
+      render: (value) => value ? `LOC-${value}` : '-'
+    },
+    { 
+      key: 'receivedDate', 
+      label: 'Received', 
+      sortable: true,
+      render: (value) => value ? formatDate(value) : '-'
+    },
+    { 
+      key: 'expiryDate', 
+      label: 'Expiry (FEFO)', 
+      sortable: true,
+      render: (value, row: Batch) => (
+        <div className="flex items-center gap-2">
+          {row.status === 'EXPIRED' && <AlertTriangle size={14} className="text-danger" />}
+          <span className={row.status === 'EXPIRED' ? 'text-danger font-medium' : row.status === 'EXPIRING_SOON' ? 'text-warning font-medium' : ''}>
+            {formatDate(value)}
+          </span>
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (value) => getStatusBadge(value),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (_, row: Batch) => (
+        <div className="flex justify-end gap-2">
+          {row.status !== 'EXPIRED' && (
+            <Button variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleSpoilClick(row); }} className="px-2 py-1 h-auto text-xs text-warning hover:bg-warning/10" title="Spoil Batch">
+              Spoil
+            </Button>
+          )}
+          <Button variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleRecallClick(row); }} className="px-2 py-1 h-auto text-xs text-danger hover:bg-danger/10" title="Recall Batch">
+            Recall
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-text">Batch Inventory</h1>
+          <p className="text-muted">Manage incoming batches. Batches are automatically sorted by First-Expired-First-Out (FEFO).</p>
+        </div>
+        <Button variant="primary" onClick={handleCreate} className="shrink-0 flex items-center gap-2">
+          <Plus size={18} />
+          Receive Batch
+        </Button>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-border flex flex-col sm:flex-row justify-between gap-4">
+          <SearchBar 
+            value={searchTerm} 
+            onChange={setSearchTerm} 
+            placeholder="Search batches by product name..."
+            className="w-full sm:max-w-md"
+          />
+        </div>
+        
+        <DataTable
+          columns={columns}
+          data={filteredBatches}
+          loading={loading}
+          empty={
+            <div className="text-center py-12">
+              <Layers size={48} className="mx-auto text-muted mb-4 opacity-30" />
+              <h3 className="text-lg font-medium text-text">No Batches Found</h3>
+              <p className="text-muted mt-1 max-w-sm mx-auto">
+                {searchTerm ? 'Try adjusting your search criteria.' : 'Get started by receiving your first inventory batch.'}
+              </p>
+              {!searchTerm && (
+                <Button variant="outline" onClick={handleCreate} className="mt-4">
+                  <Plus size={16} className="mr-2" /> Receive Batch
+                </Button>
+              )}
+            </div>
+          }
+        />
+      </div>
+
+      {/* Receive Batch Modal */}
+      <Modal
+        isOpen={isFormModalOpen}
+        onClose={() => !isSubmitting && setIsFormModalOpen(false)}
+        title="Receive New Batch"
+      >
+        <div className="p-6">
+          <BatchForm 
+            onSubmit={handleFormSubmit}
+            onCancel={() => setIsFormModalOpen(false)}
+            isLoading={isSubmitting}
+          />
+        </div>
+      </Modal>
+
+      {/* Spoil Confirmation */}
+      <ConfirmDialog
+        isOpen={isSpoilModalOpen}
+        onClose={() => !isSubmitting && setIsSpoilModalOpen(false)}
+        onConfirm={handleConfirmSpoil}
+        title="Spoil Batch"
+        message={
+          <>
+            Are you sure you want to mark this batch of <strong className="text-text">{selectedBatch?.productName}</strong> as spoiled?
+          </>
+        }
+        confirmLabel="Spoil"
+        variant="warning"
+        loading={isSubmitting}
+      />
+
+      {/* Recall Confirmation */}
+      <ConfirmDialog
+        isOpen={isRecallModalOpen}
+        onClose={() => !isSubmitting && setIsRecallModalOpen(false)}
+        onConfirm={handleConfirmRecall}
+        title="Recall Batch"
+        message={
+          <>
+            Are you sure you want to recall this batch of <strong className="text-text">{selectedBatch?.productName}</strong>? This action is permanent.
+          </>
+        }
+        confirmLabel="Recall"
+        variant="danger"
+        loading={isSubmitting}
+      />
+    </div>
+  );
+};

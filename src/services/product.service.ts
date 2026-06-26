@@ -1,0 +1,40 @@
+import apiClient from '@/config/axios.config';
+import { API } from '@/constants/api.constants';
+import { Product } from '@/types';
+
+export const ProductService = {
+  getAll: async (): Promise<Product[]> => {
+    const { data } = await apiClient.get(API.PRODUCTS.BASE);
+    return data;
+  },
+  getById: async (id: string): Promise<Product> => {
+    const { data } = await apiClient.get(API.PRODUCTS.BY_ID(id));
+    return data;
+  },
+  create: async (product: Partial<Product>): Promise<Product> => {
+    const { data } = await apiClient.post(API.PRODUCTS.BASE, product);
+    return data;
+  },
+  update: async (id: string, product: Partial<Product>): Promise<Product> => {
+    const { data } = await apiClient.put(API.PRODUCTS.BY_ID(id), product);
+    return data;
+  },
+  delete: async (id: string): Promise<void> => {
+    await apiClient.delete(API.PRODUCTS.BY_ID(id));
+  },
+  search: async (name: string): Promise<Product[]> => {
+    const { data } = await apiClient.get(`${API.PRODUCTS.SEARCH}?name=${name}`);
+    return data;
+  },
+  getByCategory: async (category: string): Promise<Product[]> => {
+    const { data } = await apiClient.get(API.PRODUCTS.BY_CATEGORY(category));
+    return data;
+  },
+  getLowStock: async (): Promise<Product[]> => {
+    const { data } = await apiClient.get(API.PRODUCTS.LOW_STOCK);
+    return data;
+  },
+  updateStock: async (id: string, stock: number): Promise<void> => {
+    await apiClient.put(`${API.PRODUCTS.UPDATE_STOCK(id)}?stock=${stock}`);
+  }
+};
