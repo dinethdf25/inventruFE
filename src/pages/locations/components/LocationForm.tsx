@@ -69,7 +69,7 @@ export const LocationForm = ({ initialData, onSubmit, onCancel, isLoading }: Loc
           Cancel
         </Button>
         <Button variant="primary" type="submit" loading={isLoading}>
-          Create Location
+          {initialData ? 'Save Changes' : 'Create Location'}
         </Button>
       </div>
     </form>

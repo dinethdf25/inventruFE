@@ -5,7 +5,10 @@ import { Supplier } from '@/types';
 export const SupplierService = {
   getAll: async (): Promise<Supplier[]> => {
     const { data } = await apiClient.get(API.SUPPLIERS.BASE);
-    return data;
+    if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
+      return (data as any).data;
+    }
+    return Array.isArray(data) ? data : [];
   },
   getById: async (id: number | string): Promise<Supplier> => {
     const { data } = await apiClient.get(API.SUPPLIERS.BY_ID(id));

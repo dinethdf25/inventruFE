@@ -7,6 +7,14 @@ export const ReorderService = {
     const { data } = await apiClient.post(API.REORDERS.BASE, { productId, quantity });
     return data;
   },
+  getAll: async (): Promise<Reorder[]> => {
+    const { data } = await apiClient.get(API.REORDERS.BASE);
+    return data;
+  },
+  updateStatus: async (id: string | number, status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'FULFILLED'): Promise<Reorder> => {
+    const { data } = await apiClient.put(API.REORDERS.STATUS(id), { status });
+    return data;
+  },
   getPendingCount: async (): Promise<number> => {
     const { data } = await apiClient.get(API.REORDERS.PENDING_COUNT);
     return data;

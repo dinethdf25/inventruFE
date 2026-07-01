@@ -21,7 +21,12 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => {
     // Globally unwrap backend responses that use the { status, message, data } format
-    if (response.data && typeof response.data === 'object' && response.data.status === true && 'data' in response.data) {
+    if (
+      response.data &&
+      typeof response.data === 'object' &&
+      (response.data.status === true || response.data.status === 200 || response.data.status === 201) &&
+      'data' in response.data
+    ) {
       response.data = response.data.data;
     }
     return response;

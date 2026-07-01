@@ -1,7 +1,9 @@
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Layers, TrendingDown, BellRing, AlertTriangle, ArrowRight, CheckCircle, Info, Activity } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useDashboard } from '@/hooks/useDashboard';
+import { useBatches } from '@/hooks/useBatches';
 import { useAlertStore } from '@/store/alert.store';
 import { StatCard } from '@/components/composite/StatCard';
 import { Card } from '@/components/composite/Card';
@@ -9,9 +11,25 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 
 export const DashboardPage = () => {
-  const { stats, monthlyAnalytics, loading } = useDashboard();
+  const { stats, extraStats, expiringBatches, monthlyAnalytics, loading } = useDashboard();
+  const { batches, loading: batchesLoading } = useBatches();
   const alerts = useAlertStore(state => state.alerts);
   const navigate = useNavigate();
+
+  const batchStatusData = useMemo(() => {
+    const counts = { FRESH: 0, EXPIRING_SOON: 0, EXPIRED: 0, RECALLED: 0 };
+    batches.forEach(b => {
+      if (counts[b.status as keyof typeof counts] !== undefined) {
+        counts[b.status as keyof typeof counts]++;
+      }
+    });
+    return [
+      { name: 'Fresh', count: counts.FRESH, fill: 'var(--color-success)' },
+      { name: 'Expiring', count: counts.EXPIRING_SOON, fill: 'var(--color-warning)' },
+      { name: 'Expired', count: counts.EXPIRED, fill: 'var(--color-danger)' },
+      { name: 'Recalled', count: counts.RECALLED, fill: 'var(--color-muted)' },
+    ];
+  }, [batches]);
 
   const unresolvedAlerts = alerts.filter(a => !a.resolved).slice(0, 3);
 
@@ -51,8 +69,24 @@ export const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Expiring Banner */}
+      {expiringBatches && expiringBatches.length > 0 && (
+        <div className="bg-warning/10 border border-warning/30 rounded-xl p-4 flex items-start sm:items-center gap-3">
+          <AlertTriangle size={24} className="text-warning shrink-0" />
+          <div className="flex-1">
+            <h4 className="text-sm font-semibold text-warning-dark">Action Required: Expiring Stock</h4>
+            <p className="text-xs text-warning-dark/80 mt-0.5">
+              You have {expiringBatches.length} batch(es) expiring within the next 7 days.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => navigate('/batches')} className="border-warning/50 text-warning hover:bg-warning/20">
+            View Batches
+          </Button>
+        </div>
+      )}
+
+      {/* Metrics Row (6 Cards) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard 
           title="Total Products" 
           value={stats?.totalProducts || 0} 
@@ -60,83 +94,152 @@ export const DashboardPage = () => {
           iconColor="primary"
           loading={loading}
           href="/products"
+          progress={75}
+          sparklineData={[12, 14, 13, 16, 15, 18, 20]}
         />
         <StatCard 
           title="Total Batches" 
-          value={stats?.totalBatches || 0} 
+          value={extraStats?.totalBatches || 0} 
           icon={<Layers size={24} />} 
           iconColor="accent"
           loading={loading}
           href="/batches"
+          progress={60}
+          sparklineData={[30, 35, 32, 40, 38, 42, 45]}
         />
         <StatCard 
           title="Low Stock Items" 
           value={stats?.lowStockItems || 0} 
           icon={<TrendingDown size={24} />} 
           iconColor="warning"
-          trend="Needs Attention"
           loading={loading}
-          href="/inventory"
+          href="/products"
+          progress={Math.min((stats?.lowStockItems || 0) * 5, 100)}
         />
         <StatCard 
           title="Active Alerts" 
           value={stats?.activeAlerts || 0} 
           icon={<BellRing size={24} />} 
           iconColor="danger"
-          trend="Critical"
           loading={loading}
           href="/alerts"
+          progress={Math.min((stats?.activeAlerts || 0) * 10, 100)}
+          sparklineData={stats?.activeAlerts ? [5, 3, 6, 2, 8, 4, stats.activeAlerts] : undefined}
+        />
+        <StatCard 
+          title="Expiring Batches" 
+          value={extraStats?.expiringBatches || 0} 
+          icon={<AlertTriangle size={24} />} 
+          iconColor="warning"
+          loading={loading}
+          href="/batches"
+          progress={extraStats?.expiringBatches ? 80 : 0}
+        />
+        <StatCard 
+          title="Pending Reorders" 
+          value={extraStats?.pendingReorders || 0} 
+          icon={<Activity size={24} />} 
+          iconColor="primary"
+          loading={loading}
+          href="/reorders"
+          progress={extraStats?.pendingReorders ? 40 : 0}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          {/* Monthly Analytics Chart */}
-          <Card title="Inventory Value Over Time">
-            <div className="h-[300px] w-full">
-              {loading ? (
-                <div className="w-full h-full bg-surface animate-pulse rounded-lg flex items-center justify-center">
-                  <Activity size={32} className="text-muted opacity-30" />
-                </div>
-              ) : monthlyAnalytics.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={monthlyAnalytics} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="currentColor" stopOpacity={0.3} className="text-primary" />
-                        <stop offset="95%" stopColor="currentColor" stopOpacity={0} className="text-primary" />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border" />
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} stroke="currentColor" className="text-muted" />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 12 }} 
-                      tickFormatter={(value) => `$${value/1000}k`}
-                      stroke="currentColor" 
-                      className="text-muted"
-                    />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text)' }}
-                      formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Value']}
-                    />
-                    <Area type="monotone" dataKey="totalValue" stroke="currentColor" fillOpacity={1} fill="url(#colorValue)" className="text-primary" strokeWidth={2} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-muted">
-                  <TrendingDown size={48} className="opacity-20 mb-3" />
-                  <p>Not enough data to display analytics yet.</p>
-                </div>
-              )}
+          {/* Dual Charts Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card title="Inventory Value Over Time">
+              <div className="h-[250px] w-full">
+                {loading ? (
+                  <div className="w-full h-full bg-surface animate-pulse rounded-lg flex items-center justify-center">
+                    <Activity size={32} className="text-muted opacity-30" />
+                  </div>
+                ) : monthlyAnalytics.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={monthlyAnalytics} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="currentColor" stopOpacity={0.3} className="text-primary" />
+                          <stop offset="95%" stopColor="currentColor" stopOpacity={0} className="text-primary" />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border" />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} stroke="currentColor" className="text-muted" />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 12 }} 
+                        tickFormatter={(value) => `$${value/1000}k`}
+                        stroke="currentColor" 
+                        className="text-muted"
+                        width={40}
+                      />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text)' }}
+                        formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Value']}
+                      />
+                      <Area type="monotone" dataKey="totalValue" stroke="currentColor" fillOpacity={1} fill="url(#colorValue)" className="text-primary" strokeWidth={2} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-muted">
+                    <TrendingDown size={48} className="opacity-20 mb-3" />
+                    <p>Not enough data to display analytics yet.</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            <Card title="Batches by Status">
+              <div className="h-[250px] w-full">
+                {batchesLoading ? (
+                  <div className="w-full h-full bg-surface animate-pulse rounded-lg flex items-center justify-center">
+                    <Activity size={32} className="text-muted opacity-30" />
+                  </div>
+                ) : batches.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={batchStatusData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} stroke="currentColor" className="text-muted" />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} stroke="currentColor" className="text-muted" />
+                      <Tooltip 
+                        cursor={{ fill: 'var(--color-surface)' }}
+                        contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text)' }}
+                      />
+                      <Bar dataKey="count" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-muted">
+                    <Layers size={48} className="opacity-20 mb-3" />
+                    <p>No batches found.</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Right Column: Quick Actions, Activity & Alerts */}
+        <div className="space-y-6">
+          <Card title="Quick Actions">
+            <div className="grid grid-cols-2 gap-3">
+              <Button variant="outline" className="h-auto py-4 flex flex-col gap-2 items-center justify-center hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all col-span-1" onClick={() => navigate('/products')}>
+                <Package size={20} />
+                <span className="text-xs">Add Product</span>
+              </Button>
+              <Button variant="outline" className="h-auto py-4 flex flex-col gap-2 items-center justify-center hover:bg-accent/5 hover:border-accent/30 hover:text-accent transition-all col-span-1" onClick={() => navigate('/batches')}>
+                <Layers size={20} />
+                <span className="text-xs">Receive Batch</span>
+              </Button>
             </div>
           </Card>
 
           {/* Recent Activity */}
           <Card 
             title="Recent Activity" 
-            action={<Button variant="ghost" onClick={() => navigate('/inventory')}>View All</Button>}
           >
             {loading ? (
               <div className="space-y-4 animate-pulse">
@@ -153,18 +256,23 @@ export const DashboardPage = () => {
             ) : stats?.recentActivity && stats.recentActivity.length > 0 ? (
               <div className="space-y-6">
                 {stats.recentActivity.map((activity, index) => (
-                  <div key={activity.id} className="flex gap-4 relative">
+                  <div key={activity.id} className="flex gap-4 relative group">
                     {/* Timeline Line */}
                     {index !== stats.recentActivity.length - 1 && (
                       <div className="absolute top-10 bottom-[-24px] left-5 w-px bg-border"></div>
                     )}
                     
-                    <div className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-full z-10 border border-card shadow-sm ${getActivityColor(activity.type)}`}>
-                      {getActivityIcon(activity.type)}
+                    <div className="relative">
+                      {index === 0 && (
+                        <div className={`absolute inset-0 rounded-full animate-ping opacity-75 ${getActivityColor(activity.type).split(' ')[1]}`}></div>
+                      )}
+                      <div className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-full z-10 border border-card shadow-sm relative ${getActivityColor(activity.type)}`}>
+                        {getActivityIcon(activity.type)}
+                      </div>
                     </div>
                     
                     <div className="pt-2 flex-1">
-                      <p className="text-sm text-text font-medium">{activity.description}</p>
+                      <p className="text-sm text-text font-medium leading-tight group-hover:text-primary transition-colors">{activity.description}</p>
                       <p className="text-xs text-muted mt-1">{formatDate(activity.timestamp)}</p>
                     </div>
                   </div>
@@ -176,26 +284,6 @@ export const DashboardPage = () => {
                 <p>No recent activity found.</p>
               </div>
             )}
-          </Card>
-        </div>
-
-        {/* Right Column: Quick Actions & Alerts */}
-        <div className="space-y-6">
-          <Card title="Quick Actions">
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="h-auto py-4 flex flex-col gap-2 items-center justify-center hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all" onClick={() => navigate('/products')}>
-                <Package size={20} />
-                <span className="text-xs">Add Product</span>
-              </Button>
-              <Button variant="outline" className="h-auto py-4 flex flex-col gap-2 items-center justify-center hover:bg-accent/5 hover:border-accent/30 hover:text-accent transition-all" onClick={() => navigate('/batches')}>
-                <Layers size={20} />
-                <span className="text-xs">Receive Batch</span>
-              </Button>
-              <Button variant="outline" className="h-auto py-4 flex flex-col gap-2 items-center justify-center hover:bg-warning/5 hover:border-warning/30 hover:text-warning transition-all col-span-2" onClick={() => navigate('/inventory')}>
-                <TrendingDown size={20} />
-                <span className="text-xs">Adjust Stock Levels</span>
-              </Button>
-            </div>
           </Card>
 
           <Card 

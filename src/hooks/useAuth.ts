@@ -66,6 +66,70 @@ export const useAuth = () => {
     }
   };
 
+  const isModuleVisible = (moduleName: string): boolean => {
+    if (!user) return false;
+    const role = user.role?.toUpperCase();
+    if (role === 'ADMIN' || role === 'SUPER ADMIN' || role === 'SUPERADMIN') return true;
+
+    // Check user's specific permissions array
+    if (user.permissions && Array.isArray(user.permissions)) {
+      if (moduleName === 'Suppliers' && user.permissions.includes('SUPPLIER_READ')) return true;
+      if (moduleName === 'Products' && user.permissions.includes('PRODUCT_READ')) return true;
+      if (moduleName === 'Batches' && user.permissions.includes('BATCH_READ')) return true;
+      if (moduleName === 'Locations' && user.permissions.includes('LOCATION_READ')) return true;
+      if (moduleName === 'Alerts' && user.permissions.includes('ALERT_VIEW')) return true;
+      if (moduleName === 'User Management' && user.permissions.includes('USER_READ')) return true;
+    }
+    
+    // Role based module mapping
+    const roleModules: Record<string, string[]> = {
+      MANAGER: ['Dashboard', 'Products', 'Suppliers', 'User Management', 'Reorders'],
+      STAFF: ['Dashboard', 'Products', 'Batches', 'Inventory', 'QR Codes', 'Alerts', 'Suppliers']
+    };
+
+    return roleModules[role]?.includes(moduleName) || false;
+  };
+
+  const hasPermission = (permission: string): boolean => {
+    if (!user) return false;
+    const role = user.role?.toUpperCase();
+    if (role === 'ADMIN' || role === 'SUPER ADMIN' || role === 'SUPERADMIN') return true;
+
+    // Check user's specific permissions array first
+    if (user.permissions && Array.isArray(user.permissions)) {
+      if (user.permissions.includes(permission)) return true;
+
+      // Group/friendly permission mappings
+      if (permission === 'Supplier CRUD') {
+        const crudPerms = ['SUPPLIER_CREATE', 'SUPPLIER_UPDATE', 'SUPPLIER_DELETE'];
+        if (crudPerms.some(p => user.permissions.includes(p))) return true;
+      }
+      if (permission === 'Product CRUD') {
+        const crudPerms = ['PRODUCT_CREATE', 'PRODUCT_UPDATE', 'PRODUCT_DELETE'];
+        if (crudPerms.some(p => user.permissions.includes(p))) return true;
+      }
+      if (permission === 'Batch CRUD') {
+        const crudPerms = ['BATCH_CREATE', 'BATCH_UPDATE', 'BATCH_DELETE'];
+        if (crudPerms.some(p => user.permissions.includes(p))) return true;
+      }
+      if (permission === 'Supplier Read' && user.permissions.includes('SUPPLIER_READ')) return true;
+      if (permission === 'Product Read' && user.permissions.includes('PRODUCT_READ')) return true;
+      if (permission === 'Batch Read' && user.permissions.includes('BATCH_READ')) return true;
+      if (permission === 'Inventory Read' && user.permissions.includes('LOCATION_READ')) return true;
+      if (permission === 'Inventory Adjust' && (user.permissions.includes('LOCATION_ASSIGN_BATCH') || user.permissions.includes('LOCATION_MOVE_BATCH'))) return true;
+      if (permission === 'Alert Read' && user.permissions.includes('ALERT_VIEW')) return true;
+      if (permission === 'Alert Resolve' && user.permissions.includes('ALERT_RESOLVE')) return true;
+    }
+
+    // Role based permission mapping fallback
+    const rolePermissions: Record<string, string[]> = {
+      MANAGER: ['Product CRUD', 'Supplier CRUD', 'Product Read', 'Supplier Read', 'Reorder Read', 'Reorder CRUD'],
+      STAFF: ['Product Read', 'Batch Read', 'Inventory Read', 'Inventory Adjust', 'Alert Read', 'Alert Resolve', 'Supplier Read', 'Supplier CRUD']
+    };
+
+    return rolePermissions[role]?.includes(permission) || false;
+  };
+
   return {
     user,
     token,
@@ -74,5 +138,7 @@ export const useAuth = () => {
     login,
     logout,
     forgotPassword,
+    isModuleVisible,
+    hasPermission,
   };
 };

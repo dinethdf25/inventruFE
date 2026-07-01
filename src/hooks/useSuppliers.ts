@@ -13,7 +13,7 @@ export const useSuppliers = () => {
     setError(null);
     try {
       const data = await SupplierService.getAll();
-      setSuppliers(data);
+      setSuppliers(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch suppliers');
       toast.error('Failed to load suppliers');

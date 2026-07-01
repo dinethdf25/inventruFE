@@ -7,10 +7,13 @@ import { AppShell } from '@/components/layout';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { ProductsPage } from '@/pages/products/ProductsPage';
 import { BatchesPage } from '@/pages/batches/BatchesPage';
-import { InventoryPage } from '@/pages/inventory/InventoryPage';
 import { AlertsPage } from '@/pages/alerts/AlertsPage';
 import { SuppliersPage } from '@/pages/suppliers/SuppliersPage';
 import { LocationsPage } from '@/pages/locations/LocationsPage';
+import { ReordersPage } from '@/pages/reorders/ReordersPage';
+import { QRCodesPage } from '@/pages/qrcodes/QRCodesPage';
+import { StaffPage } from '@/pages/users/StaffPage';
+import { RolePage } from '@/pages/users/RolePage';
 
 // No placeholders remaining
 
@@ -28,8 +31,11 @@ export const AppRouter = () => {
         <Route element={<AppShell><SuppliersPage /></AppShell>} path="/suppliers" />
         <Route element={<AppShell><LocationsPage /></AppShell>} path="/locations" />
         <Route element={<AppShell><BatchesPage /></AppShell>} path="/batches" />
-        <Route element={<AppShell><InventoryPage /></AppShell>} path="/inventory" />
         <Route element={<AppShell><AlertsPage /></AppShell>} path="/alerts" />
+        <Route element={<AppShell><ReordersPage /></AppShell>} path="/reorders" />
+        <Route element={<AppShell><QRCodesPage /></AppShell>} path="/qrcodes" />
+        <Route element={<AppShell><StaffPage /></AppShell>} path="/users/staff" />
+        <Route element={<AppShell><RolePage /></AppShell>} path="/users/roles" />
 
         {/* Redirect root to dashboard */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -20,6 +20,8 @@ export interface Batch {
   purchasePrice: number;
   receivedDate?: string; // Might be mapped from backend or not needed
   status?: 'FRESH' | 'EXPIRING_SOON' | 'EXPIRED'; // Computed frontend side or returned by backend
+  locationCode?: string;
+  supplierName?: string;
 }
 
 export interface Supplier {
@@ -36,6 +38,8 @@ export interface Location {
   section: string;
   shelf: string;
   capacity: number;
+  currentOccupancy?: number;
+  locationCode?: string;
 }
 
 export interface Notification {
@@ -84,4 +88,74 @@ export interface Alert {
   severity: 'INFO' | 'WARNING' | 'CRITICAL';
   createdAt: string;
   resolved: boolean;
+}
+
+export type Permission =
+  | 'PRODUCT_MODULE_ACCESS'
+  | 'SUPPLIER_MODULE_ACCESS'
+  | 'BATCH_MODULE_ACCESS'
+  | 'LOCATION_MODULE_ACCESS'
+  | 'QR_MODULE_ACCESS'
+  | 'USER_MANAGEMENT_ACCESS'
+  | 'PRODUCT_READ'
+  | 'PRODUCT_CREATE'
+  | 'PRODUCT_UPDATE'
+  | 'PRODUCT_DELETE'
+  | 'PRODUCT_UPDATE_STOCK'
+  | 'SUPPLIER_READ'
+  | 'SUPPLIER_CREATE'
+  | 'SUPPLIER_UPDATE'
+  | 'SUPPLIER_DELETE'
+  | 'SUPPLIER_ASSIGN_PRODUCT'
+  | 'SUPPLIER_UPDATE_RATING'
+  | 'BATCH_READ'
+  | 'BATCH_CREATE'
+  | 'BATCH_UPDATE'
+  | 'BATCH_ALLOCATE'
+  | 'BATCH_SPOIL'
+  | 'BATCH_RECALL'
+  | 'LOCATION_READ'
+  | 'LOCATION_CREATE'
+  | 'LOCATION_ASSIGN_BATCH'
+  | 'LOCATION_MOVE_BATCH'
+  | 'USER_READ'
+  | 'USER_CREATE'
+  | 'USER_UPDATE'
+  | 'USER_DELETE';
+
+export interface User {
+  id?: string | number;
+  username: string;
+  role: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  email?: string;
+  locked?: boolean;
+  moduleVisibility?: string[];
+  permissions?: Permission[];
+}
+
+export interface Customer {
+  id?: string | number;
+  name: string;
+  email: string;
+  phone: string;
+  joinDate?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
+export interface Role {
+  id?: string | number;
+  name: string;
+  permissions: string[];
+  modules: string[];
+}
+
+export interface QRCodeData {
+  id: string;
+  qrCodeId: string;
+  batchId: number | string;
+  qrImageUrl: string;
+  scanUrl: string;
+  status: 'ACTIVE' | 'EXPIRED';
+  createdAt: string;
 }

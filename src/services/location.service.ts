@@ -29,6 +29,13 @@ export const LocationService = {
     const { data } = await apiClient.get(API.LOCATIONS.BY_BATCH(batchId));
     return data;
   },
+  update: async (id: number | string, location: Partial<Location>): Promise<Location> => {
+    const { data } = await apiClient.put(API.LOCATIONS.BY_ID(id), location);
+    return data;
+  },
+  delete: async (id: number | string): Promise<void> => {
+    await apiClient.delete(API.LOCATIONS.BY_ID(id));
+  },
   getCount: async (): Promise<number> => {
     const { data } = await apiClient.get(API.LOCATIONS.COUNT);
     return data;

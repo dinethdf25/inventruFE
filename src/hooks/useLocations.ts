@@ -60,12 +60,38 @@ export const useLocations = () => {
     }
   };
 
+  const updateLocation = async (id: number | string, locationData: Partial<Location>) => {
+    try {
+      const updated = await LocationService.update(id, locationData);
+      setLocations(prev => prev.map(l => l.id === id ? updated : l));
+      toast.success('Location updated successfully');
+      return true;
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to update location');
+      return false;
+    }
+  };
+
+  const deleteLocation = async (id: number | string) => {
+    try {
+      await LocationService.delete(id);
+      setLocations(prev => prev.filter(l => l.id !== id));
+      toast.success('Location deleted successfully');
+      return true;
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to delete location');
+      return false;
+    }
+  };
+
   return {
     locations,
     loading,
     error,
     refetch: fetchLocations,
     createLocation,
+    updateLocation,
+    deleteLocation,
     assignBatch,
     moveBatch
   };

@@ -16,7 +16,6 @@ export const SupplierForm = ({ initialData, onSubmit, onCancel, isLoading }: Sup
       name: '',
       contactEmail: '',
       phone: '',
-      rating: 5,
     }
   });
 
@@ -28,38 +27,23 @@ export const SupplierForm = ({ initialData, onSubmit, onCancel, isLoading }: Sup
         error={errors.name?.message as string}
         {...register('name', { required: 'Name is required' })}
       />
-      
+
       <Input
         label="Contact Email"
         type="email"
         placeholder="e.g. contact@freshfarms.com"
         error={errors.contactEmail?.message as string}
-        {...register('contactEmail', { 
+        {...register('contactEmail', {
           required: 'Email is required',
           pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' }
         })}
       />
-      
+
       <Input
         label="Phone Number"
         placeholder="e.g. 0718975675"
         error={errors.phone?.message as string}
         {...register('phone', { required: 'Phone is required' })}
-      />
-
-      <Input
-        label="Initial Rating (0.0 to 5.0)"
-        type="number"
-        min="0"
-        max="5"
-        step="0.1"
-        error={errors.rating?.message as string}
-        {...register('rating', { 
-          required: 'Rating is required',
-          valueAsNumber: true,
-          min: { value: 0, message: 'Minimum 0' },
-          max: { value: 5, message: 'Maximum 5' }
-        })}
       />
 
       <div className="flex justify-end gap-3 pt-4 border-t border-border mt-6">
