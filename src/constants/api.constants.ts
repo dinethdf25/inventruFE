@@ -29,6 +29,10 @@ export const API = {
     COUNT: '/batches/count',         // GET
     EXPIRING_COUNT: '/batches/expiring/count', // GET
   },
+  INVENTORY: {
+    BASE: '/inventory',
+    ADJUST: '/inventory/adjust',
+  },
   DASHBOARD: {
     OVERVIEW: '/dashboard/overview', // GET
   },
