@@ -72,7 +72,7 @@ export const LocationsPage = () => {
     setIsMoveModalOpen(true);
     setLoadingInventory(true);
     try {
-      const inv = await LocationService.getInventory(location.id);
+      const inv = await LocationService.getInventory(location.id!);
       const inventoryArray = Array.isArray(inv) ? inv : [];
       setLocationInventory(inventoryArray);
       if (inventoryArray.length > 0) {
@@ -89,7 +89,7 @@ export const LocationsPage = () => {
     setIsSubmitting(true);
     let success = false;
     if (selectedLocation) {
-      success = await updateLocation(selectedLocation.id, data);
+      success = await updateLocation(selectedLocation.id!, data);
     } else {
       success = await createLocation(data);
     }
@@ -103,7 +103,7 @@ export const LocationsPage = () => {
   const handleConfirmDelete = async () => {
     if (!selectedLocation) return;
     setIsSubmitting(true);
-    const success = await deleteLocation(selectedLocation.id);
+    const success = await deleteLocation(selectedLocation.id!);
     setIsSubmitting(false);
     if (success) {
       setIsDeleteModalOpen(false);
@@ -121,7 +121,7 @@ export const LocationsPage = () => {
     setIsSubmitting(true);
     const success = await moveBatch(
       selectedBatchId,
-      movingFromLocation.id,
+      movingFromLocation.id!,
       selectedToLocationId,
       moveQuantity
     );
