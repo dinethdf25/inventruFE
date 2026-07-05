@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Trash2, Layers, AlertTriangle, Clock, QrCode, Camera } from 'lucide-react';
+import { Plus, Trash2, Layers, AlertTriangle, Clock, QrCode, Camera, Undo2, MapPin } from 'lucide-react';
 import { useBatches } from '@/hooks/useBatches';
 import { useProducts } from '@/hooks/useProducts';
 import { useLocations } from '@/hooks/useLocations';
@@ -14,11 +14,14 @@ import { SearchBar } from '@/components/composite/SearchBar';
 import { BatchForm } from './components/BatchForm';
 import { QRDetailsModal } from './components/QRDetailsModal';
 import { QRScanModal } from './components/QRScanModal';
+import { AllocateBatchModal } from './components/AllocateBatchModal';
+import { ReduceStockModal } from './components/ReduceStockModal';
+import { AssignLocationModal } from './components/AssignLocationModal';
 
 export const BatchesPage = () => {
-  const { batches, loading: batchesLoading, createBatch, spoilBatch, recallBatch } = useBatches();
+  const { batches, loading: batchesLoading, createBatch, spoilBatch, recallBatch, allocateBatch, reduceStock } = useBatches();
   const { products } = useProducts();
-  const { locations, loading: locationsLoading } = useLocations();
+  const { locations, loading: locationsLoading, assignBatch } = useLocations();
   const { suppliers, loading: suppliersLoading } = useSuppliers();
   
   const loading = batchesLoading || locationsLoading || suppliersLoading;
@@ -32,6 +35,9 @@ export const BatchesPage = () => {
   const [isRecallModalOpen, setIsRecallModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
+  const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
+  const [isReduceModalOpen, setIsReduceModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   
   // Selected batch for actions
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
@@ -43,11 +49,24 @@ export const BatchesPage = () => {
       const product = products.find(p => p.id === batch.productId);
       const location = locations.find(l => l.id === batch.locationId);
       const supplier = suppliers.find(s => s.id === batch.supplierId);
+      
+      let computedStatus = batch.status || 'ACTIVE';
+      if (computedStatus !== 'SPOILED' && computedStatus !== 'RECALLED') {
+        const expiry = new Date(batch.expiryDate).getTime();
+        const now = new Date().getTime();
+        const days = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+        
+        if (days <= 0) computedStatus = 'EXPIRED';
+        else if (days <= 7) computedStatus = 'EXPIRING_SOON';
+        else computedStatus = 'ACTIVE';
+      }
+
       return { 
         ...batch, 
         productName: batch.productName || (product ? product.name : 'Unknown Product'),
         locationCode: location ? (location.locationCode || `${location.warehouse}-${location.section}-${location.shelf}`) : `LOC-${batch.locationId}`,
-        supplierName: supplier ? supplier.name : `SUP-${batch.supplierId}`
+        supplierName: supplier ? supplier.name : `SUP-${batch.supplierId}`,
+        status: computedStatus
       };
     });
   }, [batches, products, locations, suppliers]);
@@ -61,13 +80,6 @@ export const BatchesPage = () => {
     });
   }, [enrichedBatches, searchTerm, selectedStatus]);
 
-  const heatmapData = useMemo(() => {
-    const fresh = enrichedBatches.filter(b => b.status === 'FRESH').length;
-    const expiring = enrichedBatches.filter(b => b.status === 'EXPIRING_SOON').length;
-    const expired = enrichedBatches.filter(b => b.status === 'EXPIRED').length;
-    const total = enrichedBatches.length || 1; // avoid div by 0
-    return { fresh: (fresh/total)*100, expiring: (expiring/total)*100, expired: (expired/total)*100 };
-  }, [enrichedBatches]);
 
   // Handlers
   const handleCreate = () => {
@@ -84,6 +96,11 @@ export const BatchesPage = () => {
     setIsRecallModalOpen(true);
   };
 
+  const handleReduceClick = (batch: Batch) => {
+    setSelectedBatch(batch);
+    setIsReduceModalOpen(true);
+  };
+
   const handleFormSubmit = async (data: Partial<Batch>) => {
     setIsSubmitting(true);
     // Automatically set status based on expiry date
@@ -91,9 +108,9 @@ export const BatchesPage = () => {
     const now = new Date().getTime();
     const daysUntilExpiry = (expiry - now) / (1000 * 60 * 60 * 24);
     
-    let status: 'FRESH' | 'EXPIRING_SOON' | 'EXPIRED' = 'FRESH';
+    let status: 'ACTIVE' | 'EXPIRING_SOON' | 'EXPIRED' = 'ACTIVE';
     if (daysUntilExpiry <= 0) status = 'EXPIRED';
-    else if (daysUntilExpiry <= 30) status = 'EXPIRING_SOON';
+    else if (daysUntilExpiry <= 7) status = 'EXPIRING_SOON';
     
     const success = await createBatch({ ...data, status });
     
@@ -125,9 +142,11 @@ export const BatchesPage = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'FRESH': return <Badge variant="success">Fresh</Badge>;
+      case 'ACTIVE': return <Badge variant="success">Active</Badge>;
       case 'EXPIRING_SOON': return <Badge variant="warning">Expiring Soon</Badge>;
       case 'EXPIRED': return <Badge variant="danger">Expired</Badge>;
+      case 'SPOILED': return <Badge variant="danger">Spoiled</Badge>;
+      case 'RECALLED': return <Badge variant="danger">Recalled</Badge>;
       default: return <Badge variant="muted">{status}</Badge>;
     }
   };
@@ -152,26 +171,46 @@ export const BatchesPage = () => {
           >
             <QrCode size={18} />
           </Button>
-          {row.status !== 'EXPIRED' && (
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => handleSpoilClick(row)} 
-              className="text-warning hover:bg-warning/10 transition-colors" 
-              title="Spoil Batch"
-            >
-              <AlertTriangle size={18} />
-            </Button>
+          {row.status !== 'EXPIRED' && row.status !== 'SPOILED' && row.status !== 'RECALLED' && (
+            <>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => handleReduceClick(row)} 
+                className="text-primary hover:bg-primary/10 transition-colors" 
+                title="Reduce Stock"
+              >
+                <Layers size={18} />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => { setSelectedBatch(row); setIsAssignModalOpen(true); }} 
+                className="text-primary hover:bg-primary/10 transition-colors" 
+                title="Assign Location"
+              >
+                <MapPin size={18} />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => handleSpoilClick(row)} 
+                className="text-warning hover:bg-warning/10 transition-colors" 
+                title="Spoil Batch"
+              >
+                <AlertTriangle size={18} />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => handleRecallClick(row)} 
+                className="text-danger hover:bg-danger/10 transition-colors" 
+                title="Recall Batch"
+              >
+                <Undo2 size={18} />
+              </Button>
+            </>
           )}
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => handleRecallClick(row)} 
-            className="text-danger hover:bg-danger/10 transition-colors" 
-            title="Recall Batch"
-          >
-            <Trash2 size={18} />
-          </Button>
         </div>
       ),
     },
@@ -180,6 +219,12 @@ export const BatchesPage = () => {
       label: 'Product',
       sortable: true,
       render: (value) => <span className="font-medium text-text">{value}</span>,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (value) => getStatusBadge(value),
     },
     {
       key: 'batchNumber',
@@ -195,18 +240,6 @@ export const BatchesPage = () => {
       key: 'quantity', 
       label: 'Qty', 
       sortable: true 
-    },
-    {
-      key: 'locationCode',
-      label: 'Location',
-      sortable: true,
-      render: (value) => value || '-'
-    },
-    { 
-      key: 'receivedDate', 
-      label: 'Received', 
-      sortable: true,
-      render: (value) => value ? formatDate(value) : '-'
     },
     { 
       key: 'expiryDate', 
@@ -237,10 +270,16 @@ export const BatchesPage = () => {
       }
     },
     {
-      key: 'status',
-      label: 'Status',
+      key: 'locationCode',
+      label: 'Location',
       sortable: true,
-      render: (value) => getStatusBadge(value),
+      render: (value) => value || '-'
+    },
+    { 
+      key: 'receivedDate', 
+      label: 'Received', 
+      sortable: true,
+      render: (value) => value ? formatDate(value) : '-'
     },
   ];
 
@@ -251,30 +290,27 @@ export const BatchesPage = () => {
           <h1 className="text-2xl font-bold text-text">Batch Inventory</h1>
           <p className="text-muted">Manage incoming batches. Batches are automatically sorted by First-Expired-First-Out (FEFO).</p>
         </div>
-        <div className="flex gap-2 shrink-0">
-          <Button variant="outline" onClick={() => setIsScanModalOpen(true)} className="flex items-center gap-2">
-            <Camera size={18} />
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <Button variant="outline" onClick={() => setIsAllocateModalOpen(true)} icon={<Layers size={18} />}>
+            Allocate Stock
+          </Button>
+          <Button variant="outline" onClick={() => setIsScanModalOpen(true)} icon={<Camera size={18} />}>
             Scan QR
           </Button>
-          <Button variant="primary" onClick={handleCreate} className="flex items-center gap-2">
-            <Plus size={18} />
-            Receive Batch
-          </Button>
+          {selectedStatus === 'All' && (
+            <Button variant="gradient" onClick={handleCreate} icon={<Plus size={18} />}>
+              Receive Batch
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-        {/* Heatmap Strip */}
-        <div className="h-1.5 w-full flex">
-          <div className="bg-success h-full transition-all" style={{ width: `${heatmapData.fresh}%` }} title={`Fresh: ${heatmapData.fresh.toFixed(0)}%`} />
-          <div className="bg-warning h-full transition-all" style={{ width: `${heatmapData.expiring}%` }} title={`Expiring: ${heatmapData.expiring.toFixed(0)}%`} />
-          <div className="bg-danger h-full transition-all" style={{ width: `${heatmapData.expired}%` }} title={`Expired: ${heatmapData.expired.toFixed(0)}%`} />
-        </div>
 
         <div className="p-4 border-b border-border flex flex-col md:flex-row justify-between gap-4">
           <div className="flex-1 overflow-x-auto hide-scrollbar">
             <div className="flex gap-2 min-w-max pb-1">
-              {['All', 'FRESH', 'EXPIRING_SOON', 'EXPIRED', 'RECALLED'].map(status => (
+              {['All', 'ACTIVE', 'EXPIRING_SOON', 'EXPIRED', 'SPOILED', 'RECALLED'].map(status => (
                 <button
                   key={status}
                   onClick={() => setSelectedStatus(status)}
@@ -308,7 +344,7 @@ export const BatchesPage = () => {
               <p className="text-muted mt-1 max-w-sm mx-auto">
                 {searchTerm ? 'Try adjusting your search criteria.' : 'Get started by receiving your first inventory batch.'}
               </p>
-              {!searchTerm && (
+              {!searchTerm && selectedStatus === 'All' && (
                 <Button variant="outline" onClick={handleCreate} className="mt-4">
                   <Plus size={16} className="mr-2" /> Receive Batch
                 </Button>
@@ -372,10 +408,33 @@ export const BatchesPage = () => {
         batch={selectedBatch}
       />
 
+      {/* Allocate Batch Modal */}
+      <AllocateBatchModal
+        isOpen={isAllocateModalOpen}
+        onClose={() => setIsAllocateModalOpen(false)}
+        onSubmit={allocateBatch}
+      />
+
+      {/* Reduce Stock Modal */}
+      <ReduceStockModal
+        isOpen={isReduceModalOpen}
+        onClose={() => setIsReduceModalOpen(false)}
+        onSubmit={reduceStock}
+        batch={selectedBatch}
+      />
+
       {/* QR Scanner Modal */}
       <QRScanModal
         isOpen={isScanModalOpen}
         onClose={() => setIsScanModalOpen(false)}
+      />
+
+      {/* Assign Location Modal */}
+      <AssignLocationModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        onSubmit={assignBatch}
+        batch={selectedBatch}
       />
     </div>
   );

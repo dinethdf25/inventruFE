@@ -15,19 +15,19 @@ import { ProductDetailsModal } from './components/ProductDetailsModal';
 
 export const ProductsPage = () => {
   const { products, loading, createProduct, updateProduct, deleteProduct } = useProducts();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  
+
   // Modals state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  
+
   // Selected product for edit/delete/view
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  
+
   // Submitting state for forms
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -70,13 +70,13 @@ export const ProductsPage = () => {
   const handleFormSubmit = async (data: Partial<Product>) => {
     setIsSubmitting(true);
     let success = false;
-    
+
     if (selectedProduct) {
       success = await updateProduct(selectedProduct.id as string, data);
     } else {
       success = await createProduct(data);
     }
-    
+
     setIsSubmitting(false);
     if (success) {
       setIsFormModalOpen(false);
@@ -109,29 +109,29 @@ export const ProductsPage = () => {
       width: 'w-28',
       render: (_, row: Product) => (
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
-            onClick={() => handleViewDetails(row)} 
-            className="text-primary hover:bg-primary/10 transition-colors" 
+            onClick={() => handleViewDetails(row)}
+            className="text-primary hover:bg-primary/10 transition-colors"
             title="View Details"
           >
             <Eye size={18} />
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
-            onClick={() => handleEdit(row)} 
+            onClick={() => handleEdit(row)}
             className="text-muted hover:text-primary hover:bg-surface transition-colors"
             title="Edit"
           >
             <Edit2 size={18} />
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
-            onClick={() => handleDeleteClick(row)} 
-            className="text-danger hover:bg-danger/10 transition-colors" 
+            onClick={() => handleDeleteClick(row)}
+            className="text-danger hover:bg-danger/10 transition-colors"
             title="Delete"
           >
             <Trash2 size={18} />
@@ -151,8 +151,8 @@ export const ProductsPage = () => {
       ),
     },
     { key: 'category', label: 'Category', sortable: true },
-    { 
-      key: 'unitPrice', 
+    {
+      key: 'unitPrice',
       label: 'Unit Price',
       sortable: true,
       render: (value) => `$${Number(value).toFixed(2)}`
@@ -179,8 +179,8 @@ export const ProductsPage = () => {
               <span className="text-xs text-muted">min {reorder}</span>
             </div>
             <div className="h-1.5 w-full bg-surface rounded-full overflow-hidden">
-              <div 
-                className={`h-full rounded-full ${stock <= reorder ? 'bg-danger' : 'bg-primary'}`} 
+              <div
+                className={`h-full rounded-full ${stock <= reorder ? 'bg-danger' : 'bg-primary'}`}
                 style={{ width: `${percent}%` }}
               />
             </div>
@@ -212,11 +212,10 @@ export const ProductsPage = () => {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  selectedCategory === cat 
-                  ? 'bg-primary text-white shadow-md' 
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${selectedCategory === cat
+                  ? 'bg-primary text-white shadow-md'
                   : 'bg-card text-muted border border-border hover:border-primary/50 hover:text-text'
-                }`}
+                  }`}
               >
                 {cat}
               </button>
@@ -225,9 +224,9 @@ export const ProductsPage = () => {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <SearchBar 
-            value={searchTerm} 
-            onChange={setSearchTerm} 
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
             placeholder="Search products..."
             className="w-full sm:w-64"
           />
@@ -249,7 +248,7 @@ export const ProductsPage = () => {
           </div>
         </div>
       </div>
-      
+
       {loading ? (
         viewMode === 'grid' ? <GridSkeleton count={8} /> : <TableSkeleton columns={7} rows={5} />
       ) : filteredProducts.length === 0 ? (
@@ -279,10 +278,10 @@ export const ProductsPage = () => {
             const stock = product.stock || 0;
             const reorder = product.reorderLevel || 0;
             const percent = Math.min((stock / (reorder * 3 || 100)) * 100, 100);
-            
+
             return (
-              <div 
-                key={product.id} 
+              <div
+                key={product.id}
                 onClick={() => handleViewDetails(product)}
                 className="glass-card rounded-xl p-5 group relative flex flex-col hover:-translate-y-1 hover:shadow-lg transition-all duration-300 cursor-pointer"
               >
@@ -300,21 +299,23 @@ export const ProductsPage = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <h3 className="text-lg font-semibold text-text leading-tight mb-1">{product.name}</h3>
                 <p className="text-xs text-muted font-mono mb-4">{product.id}</p>
-                
+
                 <div className="mt-auto pt-4 border-t border-border border-dashed">
-                  <div className="flex justify-between items-end mb-2">
-                    <span className="text-2xl font-bold text-text">${Number(product.unitPrice).toFixed(2)}</span>
-                    <span className={`text-sm font-medium ${stock <= reorder ? 'text-danger' : 'text-success'}`}>
+                  <div className="flex flex-wrap justify-between items-baseline gap-x-2 gap-y-1 mb-2">
+                    <span className="text-2xl font-bold text-text truncate">
+                      ${Number(product.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className={`text-sm font-semibold shrink-0 ${stock <= reorder ? 'text-danger' : 'text-success'}`}>
                       {stock} in stock
                     </span>
                   </div>
-                  
+
                   <div className="h-1.5 w-full bg-surface rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-500 ${stock <= reorder ? 'bg-danger shadow-[0_0_8px_var(--color-danger)]' : 'bg-success'}`} 
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${stock <= reorder ? 'bg-danger shadow-[0_0_8px_var(--color-danger)]' : 'bg-success'}`}
                       style={{ width: `${percent}%` }}
                     />
                   </div>
@@ -335,7 +336,7 @@ export const ProductsPage = () => {
         title={selectedProduct ? 'Edit Product' : 'Add New Product'}
       >
         <div className="p-6">
-          <ProductForm 
+          <ProductForm
             initialData={selectedProduct || undefined}
             onSubmit={handleFormSubmit}
             onCancel={() => setIsFormModalOpen(false)}
@@ -349,10 +350,11 @@ export const ProductsPage = () => {
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
         title={selectedProduct ? `Product Details - ${selectedProduct.name}` : 'Product Details'}
+        size="lg"
       >
         <div className="p-6">
           {selectedProduct && (
-            <ProductDetailsModal 
+            <ProductDetailsModal
               product={selectedProduct}
               onClose={() => setIsDetailsModalOpen(false)}
             />

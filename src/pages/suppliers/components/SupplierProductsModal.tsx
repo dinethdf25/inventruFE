@@ -114,7 +114,7 @@ export const SupplierProductsModal = ({ supplier, onClose }: SupplierProductsMod
               <div className="relative flex-1">
                 <input
                   type="text"
-                  placeholder="Type at least 2 letters to search products..."
+                  placeholder="type 2 letters"
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onFocus={() => {
@@ -133,9 +133,9 @@ export const SupplierProductsModal = ({ supplier, onClose }: SupplierProductsMod
                 {/* Autocomplete Dropdown Overlay */}
                 {showDropdown && searchQuery.length >= 2 && (
                   <>
-                    <div 
-                      className="fixed inset-0 z-10" 
-                      onClick={() => setShowDropdown(false)} 
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setShowDropdown(false)}
                     />
                     <div className="absolute left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto z-20 divide-y divide-border">
                       {searchResults.length === 0 && !searching ? (
@@ -162,9 +162,9 @@ export const SupplierProductsModal = ({ supplier, onClose }: SupplierProductsMod
                 )}
               </div>
 
-              <Button 
-                type="submit" 
-                variant="primary" 
+              <Button
+                type="submit"
+                variant="primary"
                 disabled={assigning || !selectedProductId}
                 className="shrink-0 h-[38px] px-4"
               >
@@ -184,7 +184,7 @@ export const SupplierProductsModal = ({ supplier, onClose }: SupplierProductsMod
       {/* Assigned Products List */}
       <div>
         <h4 className="text-sm font-semibold text-text mb-3">Assigned Products</h4>
-        
+
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted">
             <Loader2 className="animate-spin h-8 w-8 text-primary animate-duration-1000" />

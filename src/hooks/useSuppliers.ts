@@ -26,26 +26,48 @@ export const useSuppliers = () => {
     fetchSuppliers();
   }, [fetchSuppliers]);
 
+  const handleSupplierError = (err: any, fallbackMessage: string) => {
+    const data = err.response?.data;
+    if (data) {
+      if (typeof data === 'object') {
+        if (data.error) {
+          toast.error(data.error);
+          return;
+        }
+        // It could be a validation map: { phone: "...", contactEmail: "..." }
+        const messages = Object.values(data).filter(v => typeof v === 'string') as string[];
+        if (messages.length > 0) {
+          messages.forEach(msg => toast.error(msg));
+          return;
+        }
+      } else if (typeof data === 'string') {
+        toast.error(data);
+        return;
+      }
+    }
+    toast.error(err.message || fallbackMessage);
+  };
+
   const createSupplier = async (supplierData: Partial<Supplier>) => {
     try {
-      const newSupplier = await SupplierService.create(supplierData);
-      setSuppliers(prev => [...prev, newSupplier]);
+      await SupplierService.create(supplierData);
+      await fetchSuppliers();
       toast.success('Supplier created successfully');
       return true;
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Failed to create supplier');
+      handleSupplierError(err, 'Failed to create supplier');
       return false;
     }
   };
 
   const updateSupplier = async (id: number | string, supplierData: Partial<Supplier>) => {
     try {
-      const updatedSupplier = await SupplierService.update(id, supplierData);
-      setSuppliers(prev => prev.map(s => s.id === id ? updatedSupplier : s));
+      await SupplierService.update(id, supplierData);
+      await fetchSuppliers();
       toast.success('Supplier updated successfully');
       return true;
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Failed to update supplier');
+      handleSupplierError(err, 'Failed to update supplier');
       return false;
     }
   };
@@ -53,7 +75,7 @@ export const useSuppliers = () => {
   const deleteSupplier = async (id: number | string) => {
     try {
       await SupplierService.delete(id);
-      setSuppliers(prev => prev.filter(s => s.id !== id));
+      await fetchSuppliers();
       toast.success('Supplier deleted successfully');
       return true;
     } catch (err: any) {
@@ -65,7 +87,7 @@ export const useSuppliers = () => {
   const updateRating = async (id: number | string, rating: number) => {
     try {
       await SupplierService.updateRating(id, rating);
-      setSuppliers(prev => prev.map(s => s.id === id ? { ...s, rating } : s));
+      await fetchSuppliers();
       toast.success('Rating updated');
       return true;
     } catch (err: any) {

@@ -23,7 +23,7 @@ export const QRScanModal = ({ isOpen, onClose }: QRScanModalProps) => {
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
   const scannerId = "qr-scanner-view";
 
-  const handleScanSuccess = async (qrId: string) => {
+  const handleScanSuccess = async (decodedText: string) => {
     // Stop scanner if active
     if (qrScannerRef.current && qrScannerRef.current.isScanning) {
       try {
@@ -32,6 +32,11 @@ export const QRScanModal = ({ isOpen, onClose }: QRScanModalProps) => {
       } catch (err) {
         console.warn("Failed to stop scanner on success", err);
       }
+    }
+
+    let qrId = decodedText;
+    if (decodedText.includes('/')) {
+      qrId = decodedText.substring(decodedText.lastIndexOf('/') + 1);
     }
 
     setLoading(true);

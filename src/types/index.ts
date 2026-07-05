@@ -13,13 +13,14 @@ export interface Batch {
   productName?: string;
   batchNumber: string;
   quantity: number;
+  remainingQuantity?: number;
   manufactureDate: string;
   expiryDate: string;
   supplierId: number;
   locationId: number;
   purchasePrice: number;
   receivedDate?: string; // Might be mapped from backend or not needed
-  status?: 'FRESH' | 'EXPIRING_SOON' | 'EXPIRED'; // Computed frontend side or returned by backend
+  status?: 'FRESH' | 'ACTIVE' | 'EXPIRING_SOON' | 'EXPIRED' | 'SPOILED' | 'RECALLED'; // Computed frontend side or returned by backend
   locationCode?: string;
   supplierName?: string;
 }

@@ -48,7 +48,7 @@ export const API = {
   LOCATIONS: {
     BASE: '/location', // GET, POST
     BY_ID: (id: string | number) => `/location/${id}`, // GET
-    COUNT: '/location/count', // GET (assumed from get-warehouse-count)
+    WAREHOUSE_COUNT: '/location/warehouses/count', // GET
     ASSIGN: '/location/assign', // POST
     MOVE: '/location/move', // POST
     INVENTORY: (id: string | number) => `/location/${id}/inventory`, // GET

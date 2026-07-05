@@ -26,26 +26,45 @@ export const useProducts = () => {
     fetchProducts();
   }, [fetchProducts]);
 
+  const handleProductError = (errorResponse: any) => {
+    if (typeof errorResponse === 'object' && errorResponse !== null) {
+      if (errorResponse.error) {
+        toast.error(errorResponse.error);
+        return;
+      }
+      
+      const errorKeys = Object.keys(errorResponse);
+      const validationKeys = errorKeys.filter(k => k !== 'status' && k !== 'message' && k !== 'data');
+      if (validationKeys.length > 0) {
+        validationKeys.forEach(key => {
+          toast.error(errorResponse[key]);
+        });
+        return;
+      }
+    }
+    toast.error(errorResponse?.message || 'An unexpected error occurred');
+  };
+
   const createProduct = async (productData: Partial<Product>) => {
     try {
-      const newProduct = await ProductService.create(productData);
-      setProducts(prev => [...prev, newProduct]);
+      await ProductService.create(productData);
+      await fetchProducts();
       toast.success('Product created successfully');
       return true;
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Failed to create product');
+      handleProductError(err.response?.data || err);
       return false;
     }
   };
 
   const updateProduct = async (id: string, productData: Partial<Product>) => {
     try {
-      const updatedProduct = await ProductService.update(id, productData);
-      setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
+      await ProductService.update(id, productData);
+      await fetchProducts();
       toast.success('Product updated successfully');
       return true;
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Failed to update product');
+      handleProductError(err.response?.data || err);
       return false;
     }
   };
@@ -53,7 +72,7 @@ export const useProducts = () => {
   const deleteProduct = async (id: string) => {
     try {
       await ProductService.delete(id);
-      setProducts(prev => prev.filter(p => p.id !== id));
+      await fetchProducts();
       toast.success('Product deleted successfully');
       return true;
     } catch (err: any) {
@@ -89,7 +108,7 @@ export const useProducts = () => {
   const updateProductStock = async (id: string, stock: number) => {
     try {
       await ProductService.updateStock(id, stock);
-      setProducts(prev => prev.map(p => p.id === id ? { ...p, stock } : p));
+      await fetchProducts();
       toast.success('Stock updated');
       return true;
     } catch (err: any) {

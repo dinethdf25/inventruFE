@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 export const useAuth = () => {
   const [loading, setLoading] = useState(false);
-  
+
   // Get state and actions from the store using selectors
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
@@ -17,9 +17,9 @@ export const useAuth = () => {
     try {
       console.log('Attempting login with credentials:', credentials);
       const { token: newToken, user: newUser } = await AuthService.login(credentials);
-      
+
       console.log('Login successful! Extracted Token:', newToken ? 'YES' : 'NO', 'User:', newUser);
-      
+
       if (!newToken) {
         throw new Error('Authentication failed: No token received');
       }
@@ -32,7 +32,8 @@ export const useAuth = () => {
         console.error('Error Response Data:', error.response.data);
         console.error('Error Response Status:', error.response.status);
       }
-      toast.error(error.response?.data?.message || 'Invalid username or password');
+      console.log(error.response?.data?.message);
+      toast.error(error.response?.data?.message == "User not found" && "Please enter valid username or password" || 'Invalid username or password');
       return false;
     } finally {
       setLoading(false);
@@ -80,7 +81,7 @@ export const useAuth = () => {
       if (moduleName === 'Alerts' && user.permissions.includes('ALERT_VIEW')) return true;
       if (moduleName === 'User Management' && user.permissions.includes('USER_READ')) return true;
     }
-    
+
     // Role based module mapping
     const roleModules: Record<string, string[]> = {
       MANAGER: ['Dashboard', 'Products', 'Suppliers', 'User Management', 'Reorders'],

@@ -26,14 +26,33 @@ export const useLocations = () => {
     fetchLocations();
   }, [fetchLocations]);
 
+  const handleLocationError = (errorResponse: any) => {
+    if (typeof errorResponse === 'object' && errorResponse !== null) {
+      if (errorResponse.error) {
+        toast.error(errorResponse.error);
+        return;
+      }
+      
+      const errorKeys = Object.keys(errorResponse);
+      const validationKeys = errorKeys.filter(k => k !== 'status' && k !== 'message' && k !== 'data');
+      if (validationKeys.length > 0) {
+        validationKeys.forEach(key => {
+          toast.error(errorResponse[key]);
+        });
+        return;
+      }
+    }
+    toast.error(errorResponse?.message || 'An unexpected error occurred');
+  };
+
   const createLocation = async (locationData: Partial<Location>) => {
     try {
-      const newLocation = await LocationService.create(locationData);
-      setLocations(prev => [...prev, newLocation]);
+      await LocationService.create(locationData);
+      await fetchLocations();
       toast.success('Location created successfully');
       return true;
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Failed to create location');
+      handleLocationError(err.response?.data || err);
       return false;
     }
   };
@@ -41,10 +60,11 @@ export const useLocations = () => {
   const assignBatch = async (batchId: number | string, locationId: number | string, quantity: number) => {
     try {
       await LocationService.assignBatch(batchId, locationId, quantity);
+      await fetchLocations();
       toast.success('Batch assigned to location');
       return true;
     } catch (err: any) {
-      toast.error('Failed to assign batch');
+      handleLocationError(err.response?.data || err);
       return false;
     }
   };
@@ -52,22 +72,23 @@ export const useLocations = () => {
   const moveBatch = async (batchId: number | string, fromLocationId: number | string, toLocationId: number | string, quantity: number) => {
     try {
       await LocationService.moveBatch(batchId, fromLocationId, toLocationId, quantity);
+      await fetchLocations();
       toast.success('Batch moved successfully');
       return true;
     } catch (err: any) {
-      toast.error('Failed to move batch');
+      handleLocationError(err.response?.data || err);
       return false;
     }
   };
 
   const updateLocation = async (id: number | string, locationData: Partial<Location>) => {
     try {
-      const updated = await LocationService.update(id, locationData);
-      setLocations(prev => prev.map(l => l.id === id ? updated : l));
+      await LocationService.update(id, locationData);
+      await fetchLocations();
       toast.success('Location updated successfully');
       return true;
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Failed to update location');
+      handleLocationError(err.response?.data || err);
       return false;
     }
   };
@@ -75,7 +96,7 @@ export const useLocations = () => {
   const deleteLocation = async (id: number | string) => {
     try {
       await LocationService.delete(id);
-      setLocations(prev => prev.filter(l => l.id !== id));
+      await fetchLocations();
       toast.success('Location deleted successfully');
       return true;
     } catch (err: any) {

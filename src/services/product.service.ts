@@ -13,10 +13,16 @@ export const ProductService = {
   },
   create: async (product: Partial<Product>): Promise<Product> => {
     const { data } = await apiClient.post(API.PRODUCTS.BASE, product);
+    if (data && typeof data === 'object' && (data.error || (!data.id && Object.keys(data).length > 0))) {
+      throw data;
+    }
     return data;
   },
   update: async (id: string, product: Partial<Product>): Promise<Product> => {
     const { data } = await apiClient.put(API.PRODUCTS.BY_ID(id), product);
+    if (data && typeof data === 'object' && (data.error || (!data.id && Object.keys(data).length > 0))) {
+      throw data;
+    }
     return data;
   },
   delete: async (id: string): Promise<void> => {

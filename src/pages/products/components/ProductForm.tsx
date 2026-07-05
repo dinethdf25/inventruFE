@@ -15,19 +15,23 @@ export const ProductForm = ({ initialData, onSubmit, onCancel, isLoading }: Prod
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: initialData || {
       name: '',
-      category: 'Produce',
+      category: 'Dairy',
       reorderLevel: 10,
       unitPrice: 0,
     }
   });
 
   const categoryOptions = [
-    { label: 'Produce', value: 'Produce' },
     { label: 'Dairy', value: 'Dairy' },
-    { label: 'Meat', value: 'meats' }, // Adjusting to match Postman 'meats' example
-    { label: 'Bakery', value: 'Bakery' },
-    { label: 'Beverages', value: 'Beverages' },
-    { label: 'Pantry', value: 'Pantry' },
+    { label: 'Fruits', value: 'Fruits' },
+    { label: 'Vegetables', value: 'Vegetables' },
+    { label: 'Berverages(Organic)', value: 'Berverages(Organic)' },
+    { label: 'Snacks(Organic)', value: 'Snacks(Organic)' },
+    { label: 'Meat & Poultry', value: 'Meat & Poultry' },
+    { label: 'Rice & Grains', value: 'Rice & Grains' },
+    { label: 'Ready-to-Eat', value: 'Ready-to-Eat' },
+    { label: 'Spices', value: 'Spices' },
+    { label: 'Sweets(Organic)', value: 'Sweets(Organic)' },
   ];
 
   return (
@@ -55,7 +59,7 @@ export const ProductForm = ({ initialData, onSubmit, onCancel, isLoading }: Prod
           {...register('reorderLevel', { 
             required: 'Reorder level is required',
             valueAsNumber: true,
-            min: { value: 0, message: 'Must be a positive number' }
+            validate: (val) => (val !== undefined && !isNaN(val) && val > 0) || 'Reorder level must be greater than 0'
           })}
         />
         
@@ -68,7 +72,7 @@ export const ProductForm = ({ initialData, onSubmit, onCancel, isLoading }: Prod
           {...register('unitPrice', { 
             required: 'Unit price is required',
             valueAsNumber: true,
-            min: { value: 0, message: 'Must be a positive number' }
+            validate: (val) => (val !== undefined && !isNaN(val) && val > 0) || 'Unit price must be greater than 0'
           })}
         />
       </div>

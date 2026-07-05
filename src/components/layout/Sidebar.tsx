@@ -51,14 +51,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
     { name: 'Batches', path: '/batches', icon: <Layers size={20} /> },
     { name: 'QR Codes', path: '/qrcodes', icon: <QrCode size={20} /> },
     { name: 'Alerts', path: '/alerts', icon: <BellRing size={20} />, badge: unreadCount },
-    {
-      name: 'User Management',
-      icon: <Users size={20} />,
-      children: [
-        { name: 'Staff', path: '/users/staff' },
-        { name: 'Role', path: '/users/roles' }
-      ]
-    }
+    { name: 'User Management', path: '/users/staff', icon: <Users size={20} /> }
   ];
 
   // Filter top-level items based on visibility
@@ -128,7 +121,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
         </div>
         {!isCollapsed && (
           <span className="ml-3 font-bold text-lg text-text whitespace-nowrap overflow-hidden">
-            {APP_CONFIG.APP_NAME}
+            EcoBite
           </span>
         )}
       </div>

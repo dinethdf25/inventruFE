@@ -12,8 +12,8 @@ export const useUsers = () => {
     try {
       const data = await UserService.getStaff();
       setStaff(data);
-    } catch {
-      toast.error('Failed to load staff list');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to load staff list');
     } finally {
       setLoading(false);
     }
@@ -22,12 +22,12 @@ export const useUsers = () => {
   const createStaff = async (userData: Partial<User>) => {
     setLoading(true);
     try {
-      const newUser = await UserService.createStaff(userData);
-      setStaff(prev => [...prev, newUser]);
+      await UserService.createStaff(userData);
+      await fetchStaff();
       toast.success('Staff member added successfully');
       return true;
-    } catch {
-      toast.error('Failed to add staff member');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to add staff member');
       return false;
     } finally {
       setLoading(false);
@@ -37,12 +37,12 @@ export const useUsers = () => {
   const updateStaff = async (id: string | number, userData: Partial<User>) => {
     setLoading(true);
     try {
-      const updatedUser = await UserService.updateUser(id, userData);
-      setStaff(prev => prev.map(u => u.id === id ? { ...u, ...updatedUser } : u));
+      await UserService.updateUser(id, userData);
+      await fetchStaff();
       toast.success('Staff member updated successfully');
       return true;
-    } catch {
-      toast.error('Failed to update staff member');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to update staff member');
       return false;
     } finally {
       setLoading(false);
@@ -52,11 +52,11 @@ export const useUsers = () => {
   const deleteUser = async (id: string | number) => {
     try {
       await UserService.deleteUser(id);
-      setStaff(prev => prev.filter(u => u.id !== id));
+      await fetchStaff();
       toast.success('User deleted successfully');
       return true;
-    } catch {
-      toast.error('Failed to delete user');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to delete user');
       return false;
     }
   };
@@ -65,8 +65,8 @@ export const useUsers = () => {
     setLoading(true);
     try {
       return await UserService.getUserById(id);
-    } catch {
-      toast.error('Failed to load user details');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to load user details');
       return null;
     } finally {
       setLoading(false);

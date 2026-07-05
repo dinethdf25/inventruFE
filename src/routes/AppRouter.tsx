@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
+import { ChangePasswordPage } from '@/pages/auth/ChangePasswordPage';
 import { AppShell } from '@/components/layout';
 
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
@@ -26,6 +27,7 @@ export const AppRouter = () => {
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
+        <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route element={<AppShell><DashboardPage /></AppShell>} path="/dashboard" />
         <Route element={<AppShell><ProductsPage /></AppShell>} path="/products" />
         <Route element={<AppShell><SuppliersPage /></AppShell>} path="/suppliers" />
@@ -35,7 +37,7 @@ export const AppRouter = () => {
         <Route element={<AppShell><ReordersPage /></AppShell>} path="/reorders" />
         <Route element={<AppShell><QRCodesPage /></AppShell>} path="/qrcodes" />
         <Route element={<AppShell><StaffPage /></AppShell>} path="/users/staff" />
-        <Route element={<AppShell><RolePage /></AppShell>} path="/users/roles" />
+        {/* <Route element={<AppShell><RolePage /></AppShell>} path="/users/roles" /> */}
 
         {/* Redirect root to dashboard */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

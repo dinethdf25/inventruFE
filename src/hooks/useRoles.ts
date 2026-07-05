@@ -22,8 +22,8 @@ export const useRoles = () => {
   const createRole = async (roleData: Partial<Role>) => {
     setLoading(true);
     try {
-      const newRole = await RoleService.createRole(roleData);
-      setRoles(prev => [...prev, newRole]);
+      await RoleService.createRole(roleData);
+      await fetchRoles();
       toast.success('Role created successfully');
       return true;
     } catch {
@@ -37,8 +37,8 @@ export const useRoles = () => {
   const updateRole = async (id: string | number, roleData: Partial<Role>) => {
     setLoading(true);
     try {
-      const updated = await RoleService.updateRole(id, roleData);
-      setRoles(prev => prev.map(r => r.id === id ? updated : r));
+      await RoleService.updateRole(id, roleData);
+      await fetchRoles();
       toast.success('Role updated successfully');
       return true;
     } catch {

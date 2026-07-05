@@ -35,7 +35,10 @@ export const SupplierForm = ({ initialData, onSubmit, onCancel, isLoading }: Sup
         error={errors.contactEmail?.message as string}
         {...register('contactEmail', {
           required: 'Email is required',
-          pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' }
+          pattern: { 
+            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, 
+            message: 'Invalid email address' 
+          }
         })}
       />
 
@@ -43,7 +46,13 @@ export const SupplierForm = ({ initialData, onSubmit, onCancel, isLoading }: Sup
         label="Phone Number"
         placeholder="e.g. 0718975675"
         error={errors.phone?.message as string}
-        {...register('phone', { required: 'Phone is required' })}
+        {...register('phone', { 
+          required: 'Phone is required',
+          pattern: {
+            value: /^(?:\+94|94|0)?[1-9]\d{8}$/,
+            message: 'Invalid Sri Lankan phone number'
+          }
+        })}
       />
 
       <div className="flex justify-end gap-3 pt-4 border-t border-border mt-6">

@@ -45,7 +45,7 @@ export const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalPro
   return (
     <div className="space-y-6">
       {/* Product Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="bg-surface/40 border border-border rounded-xl p-4 flex flex-col justify-between">
           <span className="text-xs font-semibold text-muted uppercase tracking-wider">Category</span>
           <span className="text-base font-bold text-text mt-2 block truncate">
@@ -77,11 +77,10 @@ export const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalPro
       </div>
 
       {/* Stock Health Check */}
-      <div className={`p-4 rounded-xl border flex items-start gap-3 ${
-        isLowStock 
-          ? 'bg-danger/5 border-danger/20 text-danger' 
-          : 'bg-success/5 border-success/20 text-success'
-      }`}>
+      <div className={`p-4 rounded-xl border flex items-start gap-3 ${isLowStock
+        ? 'bg-danger/5 border-danger/20 text-danger'
+        : 'bg-success/5 border-success/20 text-success'
+        }`}>
         {isLowStock ? (
           <>
             <AlertTriangle className="shrink-0 mt-0.5" size={18} />
@@ -111,7 +110,7 @@ export const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalPro
           <ShoppingBag size={18} className="text-primary" />
           <h4 className="text-sm font-bold text-text">Recommended Supplier</h4>
         </div>
-        
+
         <div className="p-5">
           {loadingSupplier ? (
             <div className="flex flex-col items-center justify-center py-6 gap-2 text-muted">
@@ -128,7 +127,7 @@ export const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalPro
                   </h5>
                   <p className="text-xs text-muted font-mono mt-0.5">ID: {bestSupplier.id}</p>
                 </div>
-                
+
                 {bestSupplier.rating !== undefined && (
                   <div className="flex items-center gap-1.5 bg-warning/10 text-warning-dark border border-warning/20 px-3 py-1 rounded-full text-sm font-bold">
                     <Star size={16} fill="currentColor" className="text-warning" />
@@ -150,8 +149,8 @@ export const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalPro
 
               {isLowStock && (
                 <div className="pt-2 flex justify-end">
-                  <Button 
-                    variant="primary" 
+                  <Button
+                    variant="primary"
                     onClick={() => {
                       // Redirect to reorders page, or prefill order
                       toast.success(`Procurement draft prepared for ${bestSupplier.name}`);

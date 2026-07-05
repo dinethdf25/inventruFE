@@ -16,7 +16,10 @@ export const UserService = {
   },
 
   createStaff: async (user: Partial<User>): Promise<User> => {
-    const { data } = await apiClient.post(API.USERS.STAFF, user);
+    const { data } = await apiClient.post(API.AUTH.REGISTER, user);
+    if (data && data.status === false) {
+      throw new Error(data.message || 'Failed to add staff member');
+    }
     const newUser = data && data.data !== undefined ? data.data : data;
     return newUser;
   },

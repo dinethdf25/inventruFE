@@ -16,10 +16,24 @@ export const SupplierService = {
   },
   create: async (supplier: Partial<Supplier>): Promise<Supplier> => {
     const { data } = await apiClient.post(API.SUPPLIERS.BASE, supplier);
+    if (data && typeof data === 'object') {
+      if ('error' in data || ('id' in data === false && ('name' in data || 'contactEmail' in data || 'phone' in data))) {
+        const error = new Error('Validation or duplicate error');
+        (error as any).response = { data };
+        throw error;
+      }
+    }
     return data;
   },
   update: async (id: number | string, supplier: Partial<Supplier>): Promise<Supplier> => {
     const { data } = await apiClient.put(API.SUPPLIERS.BY_ID(id), supplier);
+    if (data && typeof data === 'object') {
+      if ('error' in data || ('id' in data === false && ('name' in data || 'contactEmail' in data || 'phone' in data))) {
+        const error = new Error('Validation or duplicate error');
+        (error as any).response = { data };
+        throw error;
+      }
+    }
     return data;
   },
   delete: async (id: number | string): Promise<void> => {

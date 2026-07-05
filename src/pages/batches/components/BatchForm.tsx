@@ -127,7 +127,8 @@ export const BatchForm = ({ onSubmit, onCancel, isLoading }: BatchFormProps) => 
                 error={errors.purchasePrice?.message as string}
                 {...register('purchasePrice', { 
                   required: 'Purchase price is required',
-                  valueAsNumber: true
+                  valueAsNumber: true,
+                  min: { value: 0.1, message: 'Purchase price must be greater than 0' }
                 })}
               />
             </div>
@@ -141,14 +142,42 @@ export const BatchForm = ({ onSubmit, onCancel, isLoading }: BatchFormProps) => 
                 label="Manufacture Date"
                 type="date"
                 error={errors.manufactureDate?.message as string}
-                {...register('manufactureDate', { required: 'Manufacture date is required' })}
+                {...register('manufactureDate', { 
+                  required: 'Manufacture date is required',
+                  validate: (value) => {
+                    const [year, month, day] = value.split('-').map(Number);
+                    const mDate = new Date(year, month - 1, day);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return mDate <= today || 'Manufacture date cannot be in the future';
+                  }
+                })}
               />
               
               <Input
                 label="Expiry Date"
                 type="date"
                 error={errors.expiryDate?.message as string}
-                {...register('expiryDate', { required: 'Expiry date is required' })}
+                {...register('expiryDate', { 
+                  required: 'Expiry date is required',
+                  validate: (value, formValues) => {
+                    const [ey, em, ed] = value.split('-').map(Number);
+                    const expiry = new Date(ey, em - 1, ed);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (expiry < today) {
+                      return 'Expiry date cannot be in the past';
+                    }
+                    if (formValues.manufactureDate) {
+                      const [my, mm, md] = formValues.manufactureDate.split('-').map(Number);
+                      const mDate = new Date(my, mm - 1, md);
+                      if (expiry <= mDate) {
+                        return 'Expiry date must be after manufacture date';
+                      }
+                    }
+                    return true;
+                  }
+                })}
               />
             </div>
 

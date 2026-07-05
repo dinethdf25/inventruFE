@@ -1,7 +1,8 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/store/auth.store';
 import { Button, Input } from '@/components/ui';
 import { User, Lock, Leaf } from 'lucide-react';
 import { APP_CONFIG } from '@/constants/app.constants';
@@ -12,19 +13,27 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // If already logged in, skip the login page and go straight to dashboard
+  // If already logged in, skip the login page and go straight to dashboard or change password
   if (isAuthenticated) {
-    const from = (location.state as any)?.from?.pathname || '/dashboard';
-    navigate(from, { replace: true });
-    return null;
+    const user = useAuthStore.getState().user;
+    if (user?.firstLogin) {
+      return <Navigate to="/change-password" replace />;
+    } else {
+      const from = (location.state as any)?.from?.pathname || '/dashboard';
+      return <Navigate to={from} replace />;
+    }
   }
 
   const onSubmit = async (data: any) => {
     const success = await login(data);
     if (success) {
-      // Go back to the page the user originally tried to visit
-      const from = (location.state as any)?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
+      const user = useAuthStore.getState().user;
+      if (user?.firstLogin) {
+        navigate('/change-password', { replace: true });
+      } else {
+        const from = (location.state as any)?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
+      }
     }
   };
 
