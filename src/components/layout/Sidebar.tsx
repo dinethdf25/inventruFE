@@ -42,7 +42,15 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
     ReorderService.getPendingCount().then(setPendingReorders).catch(() => { });
   }, []);
 
-  const navItems = [
+  interface NavItem {
+    name: string;
+    path?: string;
+    icon: React.ReactNode;
+    badge?: number;
+    children?: { name: string; path: string }[];
+  }
+
+  const navItems: NavItem[] = [
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: 'Products', path: '/products', icon: <Package size={20} /> },
     { name: 'Suppliers', path: '/suppliers', icon: <Truck size={20} /> },
