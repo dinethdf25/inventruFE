@@ -1,12 +1,45 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Product } from '@/types';
+import { Product, LowStockSupplier } from '@/types';
 import { ProductService } from '@/services/product.service';
+import { ReorderService } from '@/services/reorder.service';
 import toast from 'react-hot-toast';
 
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lowStockCount, setLowStockCount] = useState<number>(0);
+  const [lowStockItems, setLowStockItems] = useState<LowStockSupplier[]>([]);
+
+  const fetchLowStockData = useCallback(async (currentProducts?: Product[]) => {
+    try {
+      const activeProducts = currentProducts || [];
+      const [count, items] = await Promise.all([
+        ProductService.getLowStockCount().catch(() => {
+          return activeProducts.filter(p => (p.stock || 0) <= (p.reorderLevel || 0)).length;
+        }),
+        ReorderService.getLowStockSuppliers().catch((err) => {
+          console.warn('API error fetching low stock suppliers, falling back to local calculation:', err);
+          return activeProducts
+            .filter(p => (p.stock || 0) <= (p.reorderLevel || 0))
+            .map(p => ({
+              productId: p.id,
+              productName: p.name,
+              currentStock: p.stock || 0,
+              reorderLevel: p.reorderLevel || 0,
+              supplierId: null,
+              supplierName: null,
+              supplierEmail: null,
+              supplierPhone: null
+            }));
+        })
+      ]);
+      setLowStockCount(count);
+      setLowStockItems(items);
+    } catch (err) {
+      console.error('Error fetching low stock data', err);
+    }
+  }, []);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -14,13 +47,14 @@ export const useProducts = () => {
     try {
       const data = await ProductService.getAll();
       setProducts(data);
+      fetchLowStockData(data);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch products');
       toast.error('Failed to load products');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchLowStockData]);
 
   useEffect(() => {
     fetchProducts();
@@ -127,6 +161,9 @@ export const useProducts = () => {
     deleteProduct,
     searchProducts,
     fetchByCategory,
-    updateProductStock
+    updateProductStock,
+    lowStockCount,
+    lowStockItems,
+    fetchLowStockData
   };
 };

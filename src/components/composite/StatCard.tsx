@@ -69,7 +69,7 @@ export const StatCard = ({
   }[iconColor];
 
   const parsedValue = typeof value === 'number' ? value : parseInt(String(value).replace(/[^0-9]/g, '')) || 0;
-  const showCountUp = typeof value === 'number' || !isNaN(parsedValue);
+  const showCountUp = typeof value === 'number';
 
   const content = (
     <div className="flex flex-col h-full relative">

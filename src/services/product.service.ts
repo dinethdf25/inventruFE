@@ -40,6 +40,10 @@ export const ProductService = {
     const { data } = await apiClient.get(API.PRODUCTS.LOW_STOCK);
     return data;
   },
+  getLowStockCount: async (): Promise<number> => {
+    const { data } = await apiClient.get(API.PRODUCTS.LOW_STOCK_COUNT);
+    return data;
+  },
   updateStock: async (id: string, stock: number): Promise<void> => {
     await apiClient.put(`${API.PRODUCTS.UPDATE_STOCK(id)}?stock=${stock}`);
   }

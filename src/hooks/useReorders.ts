@@ -1,11 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ReorderService } from '@/services/reorder.service';
-import { Reorder } from '@/types';
+import { Reorder, LowStockSupplier } from '@/types';
 import toast from 'react-hot-toast';
+
+import { ProductService } from '@/services/product.service';
 
 export const useReorders = () => {
   const [reorders, setReorders] = useState<Reorder[]>([]);
+  const [lowStockSuppliers, setLowStockSuppliers] = useState<LowStockSupplier[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingLowStock, setLoadingLowStock] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchReorders = useCallback(async () => {
@@ -13,7 +17,6 @@ export const useReorders = () => {
     setError(null);
     try {
       const data = await ReorderService.getAll();
-      // Sort by most recent first
       const sorted = [...data].sort((a, b) => {
         return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
       });
@@ -23,6 +26,37 @@ export const useReorders = () => {
       toast.error('Failed to load reorders');
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const fetchLowStockSuppliers = useCallback(async () => {
+    setLoadingLowStock(true);
+    try {
+      const data = await ReorderService.getLowStockSuppliers();
+      setLowStockSuppliers(data);
+    } catch (err: any) {
+      console.warn('Failed to fetch low stock suppliers from API, falling back to local calculation:', err);
+      try {
+        const products = await ProductService.getAll();
+        const fallbackSuppliers: LowStockSupplier[] = products
+          .filter(p => (p.stock || 0) <= (p.reorderLevel || 0))
+          .map(p => ({
+            productId: p.id,
+            productName: p.name,
+            currentStock: p.stock || 0,
+            reorderLevel: p.reorderLevel || 0,
+            supplierId: null,
+            supplierName: null,
+            supplierEmail: null,
+            supplierPhone: null
+          }));
+        setLowStockSuppliers(fallbackSuppliers);
+      } catch (prodErr) {
+        console.error('Failed to get products for fallback:', prodErr);
+        toast.error('Failed to load low stock suppliers');
+      }
+    } finally {
+      setLoadingLowStock(false);
     }
   }, []);
 
@@ -56,9 +90,12 @@ export const useReorders = () => {
 
   return {
     reorders,
+    lowStockSuppliers,
     loading,
+    loadingLowStock,
     error,
     refetch: fetchReorders,
+    fetchLowStockSuppliers,
     createReorder,
     updateReorderStatus
   };

@@ -13,6 +13,7 @@ export const API = {
     BASE: '/products',            // GET (list), POST (create)
     BY_ID: (id: string | number) => `/products/${id}`,   // GET, PUT, DELETE
     LOW_STOCK: '/products/low-stock', // GET
+    LOW_STOCK_COUNT: '/products/low-stock/count', // GET
     UPDATE_STOCK: (id: string | number) => `/products/update-stock/${id}`, // PUT (query ?stock=N)
     SEARCH: '/products/search',      // GET (query ?name=X)
     BY_CATEGORY: (cat: string) => `/products/category/${cat}`, // GET
@@ -55,15 +56,19 @@ export const API = {
     BY_BATCH: (batchId: string | number) => `/location/batch/${batchId}`, // GET
   },
   NOTIFICATIONS: {
-    BASE: '/notifications', // GET
-    UNREAD_COUNT: '/notifications/unread/count', // GET
-    COUNT: '/notifications/count', // GET
+    BASE: '/notifications',
+    COUNT: '/notifications/count',
+    BY_ROLE: (role: string) => `/notifications/role/${role}`,
+    UNREAD_COUNT: (role: string) => `/notifications/unread/count/${role}`,
+    ROLE_COUNT: (role: string) => `/notifications/count/${role}`,
+    MARK_AS_READ: (id: string | number) => `/notifications/${id}/read`,
   },
   REORDERS: {
     BASE: '/reorders', // GET (list all), POST (create)
     BY_ID: (id: string | number) => `/reorders/${id}`, // GET, DELETE
     STATUS: (id: string | number) => `/reorders/${id}/status`, // PUT (body: { status: 'PENDING'|'APPROVED'|'REJECTED'|'FULFILLED' })
     PENDING_COUNT: '/reorders/pending/count', // GET
+    LOW_STOCK_SUPPLIERS: '/reorders/low-stock-suppliers', // GET
   },
   ANALYTICS: {
     MONTHLY: '/analytics/monthly', // GET

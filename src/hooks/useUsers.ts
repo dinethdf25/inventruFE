@@ -22,13 +22,13 @@ export const useUsers = () => {
   const createStaff = async (userData: Partial<User>) => {
     setLoading(true);
     try {
-      await UserService.createStaff(userData);
+      const response = await UserService.createStaff(userData);
       await fetchStaff();
       toast.success('Staff member added successfully');
-      return true;
+      return response;
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Failed to add staff member');
-      return false;
+      return null;
     } finally {
       setLoading(false);
     }

@@ -7,53 +7,64 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  // Read token directly from store to avoid circular dependency (useAuth → useNotifications → useAuth)
+  
   const token = useAuthStore((state) => state.token);
+  const user = useAuthStore((state) => state.user);
   const isAuthenticated = !!token;
+  const role = user?.role || '';
 
   const fetchNotifications = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !role) return;
     setLoading(true);
     try {
-      const data = await NotificationService.getAll();
+      const data = await NotificationService.getByRole(role);
       setNotifications(data);
     } catch (err) {
-      // Silently fail — notification errors shouldn't disrupt the UI
       console.error('Failed to load notifications', err);
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, role]);
 
   const fetchUnreadCount = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !role) return;
     try {
-      const count = await NotificationService.getUnreadCount();
+      const count = await NotificationService.getUnreadCount(role);
       setUnreadCount(count);
     } catch (err) {
-      // Silently fail — don't show toast for background polling
       console.error('Failed to load unread count', err);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, role]);
+
+  const markAsRead = async (id: number | string) => {
+    try {
+      await NotificationService.markAsRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Failed to mark notification as read', err);
+    }
+  };
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      // Reset state on logout
+    if (!isAuthenticated || !role) {
       setNotifications([]);
       setUnreadCount(0);
       return;
     }
     fetchUnreadCount();
-    // Poll for unread count every 60 seconds
     const interval = setInterval(fetchUnreadCount, 60000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, fetchUnreadCount]);
+  }, [isAuthenticated, role, fetchUnreadCount]);
 
   return {
     notifications,
     unreadCount,
     loading,
     fetchNotifications,
-    fetchUnreadCount
+    fetchUnreadCount,
+    markAsRead
   };
 };

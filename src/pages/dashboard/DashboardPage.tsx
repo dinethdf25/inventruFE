@@ -1,17 +1,17 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Layers, TrendingDown, BellRing, AlertTriangle, ArrowRight, CheckCircle, Info, Activity } from 'lucide-react';
+import { Package, Layers, TrendingDown, BellRing, AlertTriangle, ArrowRight, CheckCircle, Info, Activity, DollarSign, ShoppingCart } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useBatches } from '@/hooks/useBatches';
 import { useAlertStore } from '@/store/alert.store';
-import { StatCard } from '@/components/composite/StatCard';
+import { StatCard } from '@/components/composite';
 import { Card } from '@/components/composite/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 
 export const DashboardPage = () => {
-  const { stats, extraStats, expiringBatches, monthlyAnalytics, loading } = useDashboard();
+  const { stats, extraStats, expiringBatches, monthlyAnalytics, monthlyData, loading } = useDashboard();
   const { batches, loading: batchesLoading } = useBatches();
   const alerts = useAlertStore(state => state.alerts);
   const navigate = useNavigate();
@@ -85,60 +85,73 @@ export const DashboardPage = () => {
         </div>
       )}
 
-      {/* Metrics Row (6 Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard 
-          title="Total Products" 
-          value={stats?.totalProducts || 0} 
-          icon={<Package size={24} />} 
+      {/* Metrics Row (8 Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Monthly Orders"
+          value={monthlyData?.monthlySales ?? 0}
+          icon={<DollarSign size={20} />}
+          iconColor="primary"
+          loading={loading}
+          href="/"
+        />
+        <StatCard
+          title="Monthly Orders"
+          value={monthlyData?.monthlyOrders ?? 0}
+          icon={<ShoppingCart size={24} />}
+          iconColor="primary"
+          loading={loading}
+          href="/"
+        />
+        <StatCard
+          title="Monthly Notifications"
+          value={monthlyData?.monthlyNotifications ?? 0}
+          icon={<BellRing size={24} />}
+          iconColor="warning"
+          loading={loading}
+          href="/alerts"
+        />
+        <StatCard
+          title="Expired Batches"
+          value={monthlyData?.expiredBatches ?? 0}
+          icon={<AlertTriangle size={24} />}
+          iconColor="danger"
+          loading={loading}
+          href="/batches"
+        />
+        <StatCard
+          title="Total Products"
+          value={stats?.totalProducts || 0}
+          icon={<Package size={24} />}
           iconColor="primary"
           loading={loading}
           href="/products"
           progress={75}
           sparklineData={[12, 14, 13, 16, 15, 18, 20]}
         />
-        <StatCard 
-          title="Total Batches" 
-          value={extraStats?.totalBatches || 0} 
-          icon={<Layers size={24} />} 
+        <StatCard
+          title="Total Batches"
+          value={extraStats?.totalBatches || 0}
+          icon={<Layers size={24} />}
           iconColor="accent"
           loading={loading}
           href="/batches"
           progress={60}
           sparklineData={[30, 35, 32, 40, 38, 42, 45]}
         />
-        <StatCard 
-          title="Low Stock Items" 
-          value={stats?.lowStockItems || 0} 
-          icon={<TrendingDown size={24} />} 
+        <StatCard
+          title="Low Stock Items"
+          value={monthlyData?.lowStockProducts ?? stats?.lowStockItems ?? 0}
+          icon={<TrendingDown size={24} />}
           iconColor="warning"
           loading={loading}
           href="/products"
-          progress={Math.min((stats?.lowStockItems || 0) * 5, 100)}
+          progress={Math.min(((monthlyData?.lowStockProducts ?? stats?.lowStockItems ?? 0)) * 5, 100)}
         />
-        <StatCard 
-          title="Active Alerts" 
-          value={stats?.activeAlerts || 0} 
-          icon={<BellRing size={24} />} 
-          iconColor="danger"
-          loading={loading}
-          href="/alerts"
-          progress={Math.min((stats?.activeAlerts || 0) * 10, 100)}
-          sparklineData={stats?.activeAlerts ? [5, 3, 6, 2, 8, 4, stats.activeAlerts] : undefined}
-        />
-        <StatCard 
-          title="Expiring Batches" 
-          value={extraStats?.expiringBatches || 0} 
-          icon={<AlertTriangle size={24} />} 
-          iconColor="warning"
-          loading={loading}
-          href="/batches"
-          progress={extraStats?.expiringBatches ? 80 : 0}
-        />
-        <StatCard 
-          title="Pending Reorders" 
-          value={extraStats?.pendingReorders || 0} 
-          icon={<Activity size={24} />} 
+        <StatCard
+          title="Pending Reorders"
+          value={extraStats?.pendingReorders || 0}
+          icon={<Activity size={24} />}
           iconColor="primary"
           loading={loading}
           href="/reorders"
@@ -167,16 +180,16 @@ export const DashboardPage = () => {
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border" />
                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} stroke="currentColor" className="text-muted" />
-                      <YAxis 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fontSize: 12 }} 
-                        tickFormatter={(value) => `$${value/1000}k`}
-                        stroke="currentColor" 
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12 }}
+                        tickFormatter={(value) => `$${value / 1000}k`}
+                        stroke="currentColor"
                         className="text-muted"
                         width={40}
                       />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text)' }}
                         formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Value']}
                       />
@@ -204,7 +217,7 @@ export const DashboardPage = () => {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} stroke="currentColor" className="text-muted" />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} stroke="currentColor" className="text-muted" />
-                      <Tooltip 
+                      <Tooltip
                         cursor={{ fill: 'var(--color-surface)' }}
                         contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text)' }}
                       />
@@ -238,8 +251,8 @@ export const DashboardPage = () => {
           </Card>
 
           {/* Recent Activity */}
-          <Card 
-            title="Recent Activity" 
+          <Card
+            title="Recent Activity"
           >
             {loading ? (
               <div className="space-y-4 animate-pulse">
@@ -261,7 +274,7 @@ export const DashboardPage = () => {
                     {index !== stats.recentActivity.length - 1 && (
                       <div className="absolute top-10 bottom-[-24px] left-5 w-px bg-border"></div>
                     )}
-                    
+
                     <div className="relative">
                       {index === 0 && (
                         <div className={`absolute inset-0 rounded-full animate-ping opacity-75 ${getActivityColor(activity.type).split(' ')[1]}`}></div>
@@ -270,7 +283,7 @@ export const DashboardPage = () => {
                         {getActivityIcon(activity.type)}
                       </div>
                     </div>
-                    
+
                     <div className="pt-2 flex-1">
                       <p className="text-sm text-text font-medium leading-tight group-hover:text-primary transition-colors">{activity.description}</p>
                       <p className="text-xs text-muted mt-1">{formatDate(activity.timestamp)}</p>
@@ -286,11 +299,11 @@ export const DashboardPage = () => {
             )}
           </Card>
 
-          <Card 
-            title="Real-Time Alerts" 
+          <Card
+            title="Real-Time Alerts"
             action={
-              unresolvedAlerts.length > 0 ? 
-              <Badge variant="danger">{unresolvedAlerts.length} New</Badge> : null
+              unresolvedAlerts.length > 0 ?
+                <Badge variant="danger">{unresolvedAlerts.length} New</Badge> : null
             }
           >
             {unresolvedAlerts.length > 0 ? (

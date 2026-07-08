@@ -1,50 +1,68 @@
-import { useState, useMemo } from 'react';
-import { BellRing, CheckCircle, AlertTriangle, ShieldAlert, Check } from 'lucide-react';
-import { useAlertStore } from '@/store/alert.store';
-import { Alert } from '@/types';
+import { useState, useMemo, useEffect } from 'react';
+import { BellRing, CheckCircle, AlertTriangle, ShieldAlert, Check, PlusCircle, ShoppingCart } from 'lucide-react';
+import { useNotifications } from '@/hooks/useNotifications';
+import { Notification } from '@/types';
 import { DataTable, Column } from '@/components/composite/DataTable';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 
 export const AlertsPage = () => {
-  const { alerts, resolveAlert, clearResolved } = useAlertStore();
+  const { notifications, loading, fetchNotifications, markAsRead } = useNotifications();
   
-  const [filter, setFilter] = useState<'ALL' | 'UNRESOLVED'>('UNRESOLVED');
-  const [severityFilter, setSeverityFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING' | 'INFO'>('ALL');
-  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'ALL' | 'UNREAD'>('UNREAD');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'EXPIRY' | 'STOCK' | 'SYSTEM'>('ALL');
+  const [markingId, setMarkingId] = useState<number | string | null>(null);
 
-  // Derived filtered alerts
-  const filteredAlerts = useMemo(() => {
-    let result = [...alerts];
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  // Derived filtered notifications
+  const filteredNotifications = useMemo(() => {
+    let result = [...notifications];
     
     // Sort by most recent first
     result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
-    if (filter === 'UNRESOLVED') {
-      result = result.filter(a => !a.resolved);
+    if (filter === 'UNREAD') {
+      result = result.filter(n => !n.isRead);
     }
     
-    if (severityFilter !== 'ALL') {
-      result = result.filter(a => a.severity === severityFilter);
+    if (typeFilter !== 'ALL') {
+      result = result.filter(n => {
+        if (typeFilter === 'EXPIRY') return n.type === 'EXPIRY_ALERT';
+        if (typeFilter === 'STOCK') return n.type === 'STOCK_ALERT' || n.type === 'REORDER_REQUIRED';
+        // SYSTEM includes PRODUCT_CREATED, BATCH_CREATED, SUPPLIER_CREATED, etc.
+        return n.type !== 'EXPIRY_ALERT' && n.type !== 'STOCK_ALERT' && n.type !== 'REORDER_REQUIRED';
+      });
     }
     
     return result;
-  }, [alerts, filter, severityFilter]);
+  }, [notifications, filter, typeFilter]);
 
-  const criticalAlerts = useMemo(() => alerts.filter(a => !a.resolved && a.severity === 'CRITICAL'), [alerts]);
+  const criticalAlertsCount = useMemo(() => 
+    notifications.filter(n => !n.isRead && n.type === 'EXPIRY_ALERT').length, 
+    [notifications]
+  );
 
-  const handleResolve = async (id: string) => {
-    setResolvingId(id);
-    await resolveAlert(id);
-    setResolvingId(null);
+  const handleMarkAsRead = async (id: number | string) => {
+    setMarkingId(id);
+    await markAsRead(id);
+    setMarkingId(null);
   };
 
-  const getSeverityBadge = (severity: string) => {
-    switch (severity) {
-      case 'CRITICAL': return <Badge variant="danger"><div className="flex gap-1 items-center w-fit"><ShieldAlert size={12}/> Critical</div></Badge>;
-      case 'WARNING': return <Badge variant="warning"><div className="flex gap-1 items-center w-fit"><AlertTriangle size={12}/> Warning</div></Badge>;
-      case 'INFO': return <Badge variant="info"><div className="flex gap-1 items-center w-fit"><BellRing size={12}/> Info</div></Badge>;
-      default: return <Badge variant="muted">{severity}</Badge>;
+  const getTypeBadge = (type: string) => {
+    switch (type) {
+      case 'EXPIRY_ALERT': 
+        return <Badge variant="danger"><div className="flex gap-1 items-center w-fit"><ShieldAlert size={12}/> Expiry</div></Badge>;
+      case 'STOCK_ALERT': 
+        return <Badge variant="warning"><div className="flex gap-1 items-center w-fit"><AlertTriangle size={12}/> Stock</div></Badge>;
+      case 'REORDER_REQUIRED':
+        return <Badge variant="warning"><div className="flex gap-1 items-center w-fit"><ShoppingCart size={12}/> Reorder Req</div></Badge>;
+      case 'REORDER_CREATED':
+        return <Badge variant="info"><div className="flex gap-1 items-center w-fit"><ShoppingCart size={12}/> Reorder Sent</div></Badge>;
+      default: 
+        return <Badge variant="info"><div className="flex gap-1 items-center w-fit"><PlusCircle size={12}/> {type?.replace('_', ' ') || 'SYSTEM'}</div></Badge>;
     }
   };
 
@@ -59,16 +77,16 @@ export const AlertsPage = () => {
       key: 'actions',
       label: 'Actions',
       width: 'w-20',
-      render: (_, row: Alert) => (
+      render: (_, row: Notification) => (
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-          {!row.resolved && (
+          {!row.isRead && (
             <Button 
               variant="ghost"
               size="icon" 
-              onClick={() => handleResolve(row.id)}
-              loading={resolvingId === row.id}
+              onClick={() => handleMarkAsRead(row.id)}
+              loading={markingId === row.id}
               className="text-success hover:bg-success/10 transition-colors"
-              title="Resolve Alert"
+              title="Mark as Read"
             >
               <Check size={18} />
             </Button>
@@ -83,30 +101,23 @@ export const AlertsPage = () => {
       render: (value) => <span className="text-sm text-text">{formatDate(value)}</span>,
     },
     {
-      key: 'productName',
-      label: 'Product',
+      key: 'type',
+      label: 'Type',
       sortable: true,
-      render: (value) => <span className="font-medium text-text">{value}</span>,
+      render: (value) => getTypeBadge(value),
     },
     {
-      key: 'severity',
-      label: 'Severity',
-      sortable: true,
-      render: (value) => getSeverityBadge(value),
-    },
-    { 
-      key: 'currentStock', 
-      label: 'Current Stock', 
-      sortable: true,
-      render: (value) => <span className="font-medium">{value} units</span>
+      key: 'message',
+      label: 'Message',
+      render: (value) => <span className="font-medium text-text">{value}</span>,
     },
     {
       key: 'status',
       label: 'Status',
-      render: (_, row: Alert) => (
-        row.resolved ? 
-          <Badge variant="success" className="bg-success/5 text-success">Resolved</Badge> : 
-          <Badge variant="warning" className="bg-warning/5 text-warning">Action Required</Badge>
+      render: (_, row: Notification) => (
+        row.isRead ? 
+          <Badge variant="success" className="bg-success/5 text-success">Read</Badge> : 
+          <Badge variant="warning" className="bg-warning/5 text-warning">New Alert</Badge>
       )
     },
   ];
@@ -116,58 +127,58 @@ export const AlertsPage = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-text flex items-center gap-3">
-            System Alerts
-            {alerts.filter(a => !a.resolved).length > 0 && (
+            System Alerts & Notifications
+            {notifications.filter(n => !n.isRead).length > 0 && (
               <span className="flex h-3 w-3 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-danger"></span>
               </span>
             )}
           </h1>
-          <p className="text-muted">Real-time alerts for low stock and expiring items.</p>
+          <p className="text-muted">Real-time alerts and audit logging from your backend notification service.</p>
         </div>
         
         <div className="flex flex-col gap-3 items-end">
           <div className="flex items-center gap-3">
-            {filter === 'ALL' && alerts.some(a => a.resolved) && (
-              <Button variant="ghost" onClick={clearResolved} className="text-muted hover:text-danger text-sm h-9">
-                Clear Resolved
-              </Button>
-            )}
             <div className="flex bg-surface border border-border rounded-lg p-1">
-            <button 
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${filter === 'UNRESOLVED' ? 'bg-card shadow-sm text-text' : 'text-muted hover:text-text'}`}
-              onClick={() => setFilter('UNRESOLVED')}
-            >
-              Unresolved ({alerts.filter(a => !a.resolved).length})
-            </button>
-            <button 
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${filter === 'ALL' ? 'bg-card shadow-sm text-text' : 'text-muted hover:text-text'}`}
-              onClick={() => setFilter('ALL')}
-            >
-              All Alerts
-            </button>
-          </div>
+              <button 
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${filter === 'UNREAD' ? 'bg-card shadow-sm text-text' : 'text-muted hover:text-text'}`}
+                onClick={() => setFilter('UNREAD')}
+              >
+                Unread ({notifications.filter(n => !n.isRead).length})
+              </button>
+              <button 
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${filter === 'ALL' ? 'bg-card shadow-sm text-text' : 'text-muted hover:text-text'}`}
+                onClick={() => setFilter('ALL')}
+              >
+                All Alerts
+              </button>
+            </div>
           </div>
           <div className="flex gap-2">
-            {['ALL', 'CRITICAL', 'WARNING', 'INFO'].map(sev => (
+            {[
+              { id: 'ALL', label: 'All Alerts' },
+              { id: 'EXPIRY', label: 'Expiry Alerts' },
+              { id: 'STOCK', label: 'Stock & Reorders' },
+              { id: 'SYSTEM', label: 'System Events' }
+            ].map(type => (
               <button
-                key={sev}
-                onClick={() => setSeverityFilter(sev as any)}
+                key={type.id}
+                onClick={() => setTypeFilter(type.id as any)}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                  severityFilter === sev
+                  typeFilter === type.id
                   ? 'bg-primary text-white shadow-md'
                   : 'bg-card border border-border text-muted hover:border-primary/50 hover:text-text'
                 }`}
               >
-                {sev === 'ALL' ? 'All Severities' : sev}
+                {type.label}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {criticalAlerts.length > 0 && (
+      {criticalAlertsCount > 0 && (
         <div className="glass-card bg-danger/10 border-danger/30 rounded-xl p-5 shadow-lg animate-fade-in relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-danger/20 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2"></div>
           <div className="flex items-start sm:items-center gap-4 relative z-10">
@@ -177,10 +188,10 @@ export const AlertsPage = () => {
             <div className="flex-1">
               <h2 className="text-lg font-bold text-danger-dark">Critical Alerts Requiring Action</h2>
               <p className="text-sm text-danger-dark/80 mt-1">
-                You have {criticalAlerts.length} critical alert(s) that need immediate attention. Stockouts can cause significant delays.
+                You have {criticalAlertsCount} critical alert(s) that need immediate attention. Expired inventory can cause wastage.
               </p>
             </div>
-            <Button variant="danger" onClick={() => { setFilter('UNRESOLVED'); setSeverityFilter('CRITICAL'); }} className="shrink-0 shadow-md shadow-danger/20">
+            <Button variant="danger" onClick={() => { setFilter('UNREAD'); setTypeFilter('EXPIRY'); }} className="shrink-0 shadow-md shadow-danger/20">
               View Critical
             </Button>
           </div>
@@ -190,14 +201,15 @@ export const AlertsPage = () => {
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
         <DataTable
           columns={columns}
-          data={filteredAlerts}
-          rowClassName={(row) => `transition-all duration-500 ${resolvingId === row.id ? 'opacity-50 scale-[0.98] bg-surface/50' : ''}`}
+          data={filteredNotifications}
+          loading={loading}
+          rowClassName={(row) => `transition-all duration-500 ${markingId === row.id ? 'opacity-50 scale-[0.98] bg-surface/50' : ''}`}
           empty={
             <div className="text-center py-12">
               <CheckCircle size={48} className="mx-auto text-success mb-4 opacity-50" />
               <h3 className="text-lg font-medium text-text">All Clear</h3>
               <p className="text-muted mt-1 max-w-sm mx-auto">
-                There are no {filter === 'UNRESOLVED' ? 'unresolved ' : ''}alerts requiring your attention at this time.
+                There are no {filter === 'UNREAD' ? 'unread ' : ''}notifications requiring your attention at this time.
               </p>
             </div>
           }

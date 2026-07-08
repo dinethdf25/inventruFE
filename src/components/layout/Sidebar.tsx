@@ -18,7 +18,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useAlertStore } from '@/store/alert.store';
+import { useNotifications } from '@/hooks/useNotifications';
 import { APP_CONFIG } from '@/constants/app.constants';
 import { Tooltip, Avatar } from '@/components/ui';
 import { ReorderService } from '@/services/reorder.service';
@@ -30,7 +30,7 @@ export interface SidebarProps {
 
 export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
   const { user, logout, isModuleVisible } = useAuth();
-  const unreadCount = useAlertStore((state) => state.unreadCount);
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
 
   const [pendingReorders, setPendingReorders] = React.useState(0);

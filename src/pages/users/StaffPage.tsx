@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/components/composite/ConfirmDialog';
 import { Badge } from '@/components/ui/Badge';
 import { SearchBar } from '@/components/composite/SearchBar';
 import { UserPlus, UserCheck, Shield, Eye, Edit2, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import { Permission } from '@/types';
 
@@ -67,6 +68,10 @@ export const StaffPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const [createdUserTempPassword, setCreatedUserTempPassword] = useState<{
+    username: string;
+    temporaryPassword: string;
+  } | null>(null);
   
   // Form State
   const [username, setUsername] = useState('');
@@ -110,7 +115,6 @@ export const StaffPage = () => {
     e.preventDefault();
     if (!username) return;
     
-    let success;
     if (selectedStaff?.id) {
       const updatePayload = {
         email,
@@ -119,7 +123,8 @@ export const StaffPage = () => {
         locked,
         permissions
       };
-      success = await updateStaff(selectedStaff.id, updatePayload);
+      const success = await updateStaff(selectedStaff.id, updatePayload);
+      if (success) setIsModalOpen(false);
     } else {
       const createPayload = {
         username,
@@ -129,10 +134,17 @@ export const StaffPage = () => {
         locked,
         permissions
       };
-      success = await createStaff(createPayload);
+      const response = await createStaff(createPayload);
+      if (response) {
+        setIsModalOpen(false);
+        if (response.temporaryPassword) {
+          setCreatedUserTempPassword({
+            username: response.username,
+            temporaryPassword: response.temporaryPassword
+          });
+        }
+      }
     }
-
-    if (success) setIsModalOpen(false);
   };
 
   const handleDeleteClick = (staffMember: any) => {
@@ -418,6 +430,56 @@ export const StaffPage = () => {
         confirmLabel="Delete User"
         variant="danger"
       />
+
+      {/* Temporary Password Modal */}
+      <Modal
+        isOpen={!!createdUserTempPassword}
+        onClose={() => setCreatedUserTempPassword(null)}
+        title="Temporary Password Generated"
+        footer={
+          <Button variant="primary" onClick={() => setCreatedUserTempPassword(null)}>
+            Done
+          </Button>
+        }
+      >
+        <div className="p-6 text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-success/10 text-success flex items-center justify-center mx-auto">
+            <UserCheck size={24} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-text">Staff Member Registered</h3>
+            <p className="text-sm text-muted mt-1">
+              User <strong className="text-text">{createdUserTempPassword?.username}</strong> has been created.
+            </p>
+          </div>
+          <div className="bg-surface border border-border p-4 rounded-xl space-y-2 text-left">
+            <span className="text-xs font-semibold text-muted tracking-wider uppercase block">Temporary Password</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                value={createdUserTempPassword?.temporaryPassword || ''}
+                className="bg-card border border-border rounded-lg px-3 py-2 text-sm font-mono flex-1 focus:outline-none"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (createdUserTempPassword?.temporaryPassword) {
+                    navigator.clipboard.writeText(createdUserTempPassword.temporaryPassword);
+                    toast.success('Password copied to clipboard!');
+                  }
+                }}
+              >
+                Copy
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-danger font-medium">
+            ⚠️ Share this password with the staff member. They will need to change it on their first login.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 };

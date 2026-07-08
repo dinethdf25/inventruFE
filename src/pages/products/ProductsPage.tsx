@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, Package, Grid, List, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package, Grid, List, Eye, AlertTriangle, Mail } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { Product } from '@/types';
 import { DataTable, Column } from '@/components/composite/DataTable';
@@ -14,7 +14,8 @@ import { ProductForm } from './components/ProductForm';
 import { ProductDetailsModal } from './components/ProductDetailsModal';
 
 export const ProductsPage = () => {
-  const { products, loading, createProduct, updateProduct, deleteProduct } = useProducts();
+  const { products, loading, createProduct, updateProduct, deleteProduct, lowStockCount, lowStockItems } = useProducts();
+  const [activeView, setActiveView] = useState<'catalog' | 'low-stock'>('catalog');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -197,13 +198,90 @@ export const ProductsPage = () => {
           <h1 className="text-2xl font-bold text-text">Product Catalog</h1>
           <p className="text-muted">Manage your inventory catalog, categories, and stock limits.</p>
         </div>
-        <Button variant="primary" onClick={handleCreate} className="shrink-0 flex items-center gap-2">
-          <Plus size={18} />
-          Add Product
-        </Button>
+        <div className="flex items-center gap-3 shrink-0">
+          <Button 
+            variant={activeView === 'low-stock' ? 'danger' : 'outline'} 
+            onClick={() => setActiveView(activeView === 'low-stock' ? 'catalog' : 'low-stock')} 
+            className="flex items-center gap-2"
+          >
+            <AlertTriangle size={18} className={activeView === 'low-stock' ? 'text-white' : 'text-warning'} />
+            Low Stock Alerts
+            {lowStockCount > 0 && (
+              <Badge variant={activeView === 'low-stock' ? 'danger' : 'warning'} className="ml-1 px-1.5 py-0.5 text-xs">{lowStockCount}</Badge>
+            )}
+          </Button>
+          <Button variant="primary" onClick={handleCreate} className="flex items-center gap-2">
+            <Plus size={18} />
+            Add Product
+          </Button>
+        </div>
       </div>
 
-      {/* Controls Bar */}
+      {activeView === 'low-stock' ? (
+        <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden animate-fade-in">
+          <div className="p-4 border-b border-border bg-surface flex justify-between items-center">
+            <h2 className="font-semibold text-text flex items-center gap-2">
+              <AlertTriangle size={18} className="text-warning" /> 
+              Products Requiring Reorder
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-surface text-muted">
+                <tr>
+                  <th className="p-4 font-medium">Product</th>
+                  <th className="p-4 font-medium">Category</th>
+                  <th className="p-4 font-medium">Stock Level</th>
+                  <th className="p-4 font-medium">Supplier Info</th>
+                  <th className="p-4 font-medium">Reorder Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {lowStockItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-muted">No low stock items found.</td>
+                  </tr>
+                ) : (
+                  lowStockItems.map((item, idx) => {
+                    const prodCategory = products.find(p => p.id === item.productId)?.category || '-';
+                    return (
+                      <tr key={idx} className="hover:bg-surface/50 transition-colors">
+                        <td className="p-4">
+                          <p className="font-medium text-text">{item.productName || 'Unknown'}</p>
+                          <p className="text-xs text-muted">{item.productId || 'Unknown ID'}</p>
+                        </td>
+                        <td className="p-4">{prodCategory}</td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-danger font-semibold">{item.currentStock ?? 0}</span>
+                            <span className="text-muted text-xs">/ {item.reorderLevel ?? 0} min</span>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          {item.supplierId ? (
+                            <div>
+                              <p className="font-medium text-text">{item.supplierName || `Supplier #${item.supplierId}`}</p>
+                              {item.supplierPhone && <p className="text-xs text-muted">📞 {item.supplierPhone}</p>}
+                              {item.supplierEmail && <p className="text-xs text-muted">✉️ {item.supplierEmail}</p>}
+                            </div>
+                          ) : (
+                            <span className="text-muted">Not assigned</span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <Badge variant="warning">Needs Reorder</Badge>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Controls Bar */}
       <div className="flex flex-col md:flex-row justify-between gap-4">
         {/* Category Tabs */}
         <div className="flex-1 overflow-x-auto hide-scrollbar">
@@ -327,6 +405,8 @@ export const ProductsPage = () => {
             );
           })}
         </div>
+      )}
+      </>
       )}
 
       {/* Create/Edit Modal */}

@@ -44,10 +44,14 @@ export interface Location {
 }
 
 export interface Notification {
-  id: string;
+  id: number | string;
   message: string;
-  read: boolean;
+  type: string;
+  status: string;
   createdAt: string;
+  isRead: boolean;
+  targetRole: string;
+  read?: boolean;
 }
 
 export interface Reorder {
@@ -56,6 +60,17 @@ export interface Reorder {
   quantity: number;
   status: string;
   createdAt: string;
+}
+
+export interface LowStockSupplier {
+  productId: string;
+  productName: string;
+  currentStock: number;
+  reorderLevel: number;
+  supplierId: number | null;
+  supplierName: string | null;
+  supplierEmail: string | null;
+  supplierPhone: string | null;
 }
 
 export interface InventoryAdjustment {
@@ -133,6 +148,7 @@ export interface User {
   locked?: boolean;
   moduleVisibility?: string[];
   permissions?: Permission[];
+  temporaryPassword?: string;
 }
 
 export interface Customer {

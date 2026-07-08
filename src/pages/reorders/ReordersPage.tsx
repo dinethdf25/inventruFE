@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ShoppingCart, CheckCircle, XCircle, Clock, PackageCheck } from 'lucide-react';
+import { ShoppingCart, CheckCircle, XCircle, Clock, PackageCheck, AlertTriangle } from 'lucide-react';
 import { useReorders } from '@/hooks/useReorders';
 import { useProducts } from '@/hooks/useProducts';
 import { Reorder } from '@/types';
@@ -7,6 +7,7 @@ import { DataTable, Column } from '@/components/composite/DataTable';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { SearchBar } from '@/components/composite/SearchBar';
+import { LowStockSuppliersModal } from './components/LowStockSuppliersModal';
 
 export const ReordersPage = () => {
   const { reorders, loading, updateReorderStatus } = useReorders();
@@ -14,6 +15,7 @@ export const ReordersPage = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<string>('ALL'); // ALL, PENDING, APPROVED, REJECTED, FULFILLED
+  const [isLowStockModalOpen, setIsLowStockModalOpen] = useState(false);
 
   // Enriched Reorders
   const enrichedReorders = useMemo(() => {
@@ -133,6 +135,14 @@ export const ReordersPage = () => {
           </h1>
           <p className="text-muted">Manage product restocks and supplier purchase orders.</p>
         </div>
+        <Button 
+          variant="danger" 
+          onClick={() => setIsLowStockModalOpen(true)}
+          className="shrink-0 shadow-md shadow-danger/20 flex items-center gap-2"
+        >
+          <AlertTriangle size={18} />
+          View Low Stock
+        </Button>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -177,6 +187,11 @@ export const ReordersPage = () => {
           }
         />
       </div>
+
+      <LowStockSuppliersModal 
+        isOpen={isLowStockModalOpen}
+        onClose={() => setIsLowStockModalOpen(false)}
+      />
     </div>
   );
 };

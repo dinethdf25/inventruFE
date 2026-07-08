@@ -7,12 +7,24 @@ export const NotificationService = {
     const { data } = await apiClient.get(API.NOTIFICATIONS.BASE);
     return data;
   },
-  getUnreadCount: async (): Promise<number> => {
-    const { data } = await apiClient.get(API.NOTIFICATIONS.UNREAD_COUNT);
-    return data;
-  },
   getCount: async (): Promise<number> => {
     const { data } = await apiClient.get(API.NOTIFICATIONS.COUNT);
+    return data;
+  },
+  getByRole: async (role: string): Promise<Notification[]> => {
+    const { data } = await apiClient.get(API.NOTIFICATIONS.BY_ROLE(role));
+    return data;
+  },
+  getUnreadCount: async (role: string): Promise<number> => {
+    const { data } = await apiClient.get(API.NOTIFICATIONS.UNREAD_COUNT(role));
+    return data;
+  },
+  getTotalCount: async (role: string): Promise<number> => {
+    const { data } = await apiClient.get(API.NOTIFICATIONS.ROLE_COUNT(role));
+    return data;
+  },
+  markAsRead: async (id: string | number): Promise<string> => {
+    const { data } = await apiClient.put(API.NOTIFICATIONS.MARK_AS_READ(id));
     return data;
   }
 };
