@@ -16,10 +16,11 @@ export interface StatCardProps {
   loading?: boolean;
   progress?: number;
   sparklineData?: number[];
+  isCurrency?: boolean;
 }
 
 // Animate counting up to the value
-const CountUp = ({ end, duration = 1000 }: { end: number; duration?: number }) => {
+const CountUp = ({ end, duration = 1000, isCurrency = false }: { end: number; duration?: number; isCurrency?: boolean }) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -37,7 +38,11 @@ const CountUp = ({ end, duration = 1000 }: { end: number; duration?: number }) =
     window.requestAnimationFrame(step);
   }, [end, duration]);
 
-  return <span>{count}</span>;
+  const formattedValue = isCurrency
+    ? new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 0 }).format(count)
+    : count;
+
+  return <span>{formattedValue}</span>;
 };
 
 export const StatCard = ({
@@ -51,6 +56,7 @@ export const StatCard = ({
   loading = false,
   progress,
   sparklineData,
+  isCurrency = false,
 }: StatCardProps) => {
   const colorClasses = {
     primary: 'text-primary bg-primary/10 stroke-primary',
@@ -81,7 +87,11 @@ export const StatCard = ({
               <div className="h-8 w-24 bg-surface rounded animate-pulse" />
             ) : (
               <h4 className="text-3xl font-bold text-text tracking-tight">
-                {showCountUp ? <CountUp end={parsedValue} /> : value}
+                {showCountUp ? (
+                  <CountUp end={parsedValue} isCurrency={isCurrency} />
+                ) : (
+                  isCurrency ? new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 0 }).format(Number(value) || 0) : value
+                )}
               </h4>
             )}
             {trend && !loading && (
