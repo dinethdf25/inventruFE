@@ -9,8 +9,9 @@ import { Modal } from '@/components/composite/Modal';
 import { ConfirmDialog } from '@/components/composite/ConfirmDialog';
 import { Badge } from '@/components/ui/Badge';
 import { SearchBar } from '@/components/composite/SearchBar';
-import { UserPlus, UserCheck, Shield, Eye, Edit2, Trash2 } from 'lucide-react';
+import { UserPlus, UserCheck, Shield, Eye, Edit2, Trash2, Unlock } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { AuthService } from '@/services/auth.service';
 
 import { Permission } from '@/types';
 
@@ -130,8 +131,6 @@ export const StaffPage = () => {
         username,
         email,
         role,
-        status,
-        locked,
         permissions
       };
       const response = await createStaff(createPayload);
@@ -159,6 +158,16 @@ export const StaffPage = () => {
     }
   };
 
+  const handleUnlock = async (username: string) => {
+    try {
+      await AuthService.unlockAccount(username);
+      toast.success(`Account for ${username} unlocked successfully`);
+      fetchStaff();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to unlock account');
+    }
+  };
+
   const filteredStaff = staff.filter(member => 
     member.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -181,6 +190,17 @@ export const StaffPage = () => {
           >
             <Edit2 size={18} />
           </Button>
+          {row.locked && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleUnlock(row.username)} 
+              className="text-warning hover:text-warning hover:bg-warning/10 transition-colors"
+              title="Unlock Account"
+            >
+              <Unlock size={18} />
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="icon"

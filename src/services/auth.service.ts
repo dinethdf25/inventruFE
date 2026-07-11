@@ -1,6 +1,6 @@
 import apiClient from '@/config/axios.config';
 import { API } from '@/constants/api.constants';
-import { parseJwtFromHeader } from '@/utils/jwt.utils';
+import { parseJwtFromHeader, decodeJwt } from '@/utils/jwt.utils';
 
 export const AuthService = {
   /**
@@ -10,11 +10,12 @@ export const AuthService = {
   login: async ({ username, password }: any) => {
     const response = await apiClient.post(API.AUTH.LOGIN, { username, password });
 
+    if (response.data && response.data.status === false) {
+      throw new Error(response.data.message || 'Login failed');
+    }
+
     let token = null;
     let user = null;
-
-    console.log(response)
-
 
     if (response.data && response.data.data && response.data.data.token) {
       token = response.data.data.token;
@@ -26,6 +27,13 @@ export const AuthService = {
       // Fallback: Extract token from header (usually lowercase in axios)
       token = parseJwtFromHeader(response.headers['authorization'] || response.headers['Authorization']);
       user = response.data?.data || response.data;
+    }
+
+    if (token && user) {
+      const decoded = decodeJwt(token);
+      if (decoded && decoded.permissions) {
+        user.permissions = decoded.permissions;
+      }
     }
 
     return { token, user };

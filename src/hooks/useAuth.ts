@@ -28,12 +28,14 @@ export const useAuth = () => {
       return true;
     } catch (error: any) {
       console.error('Login Error Caught in useAuth:', error);
-      if (error.response) {
-        console.error('Error Response Data:', error.response.data);
-        console.error('Error Response Status:', error.response.status);
-      }
-      console.log(error.response?.data?.message);
-      toast.error(error.response?.data?.message == "User not found" && "Please enter valid username or password" || 'Invalid username or password');
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Invalid username or password';
+      
+      toast.error(
+        errorMessage === "User not found" 
+          ? "Please enter valid username or password" 
+          : errorMessage
+      );
       return false;
     } finally {
       setLoading(false);
@@ -71,24 +73,28 @@ export const useAuth = () => {
     if (!user) return false;
     const role = user.role?.toUpperCase();
     if (role === 'ADMIN' || role === 'SUPER ADMIN' || role === 'SUPERADMIN') return true;
+    if (role === 'CUSTOMER') return false;
 
-    // Check user's specific permissions array
+    // Dashboard is accessible to all logged-in staff/managers
+    if (moduleName === 'Dashboard') return true;
+
+    // strict check against user's specific permissions array
     if (user.permissions && Array.isArray(user.permissions)) {
-      if (moduleName === 'Suppliers' && user.permissions.includes('SUPPLIER_READ')) return true;
-      if (moduleName === 'Products' && user.permissions.includes('PRODUCT_READ')) return true;
-      if (moduleName === 'Batches' && user.permissions.includes('BATCH_READ')) return true;
-      if (moduleName === 'Locations' && user.permissions.includes('LOCATION_READ')) return true;
-      if (moduleName === 'Alerts' && user.permissions.includes('ALERT_VIEW')) return true;
-      if (moduleName === 'User Management' && user.permissions.includes('USER_READ')) return true;
+      if (moduleName === 'Products') return user.permissions.includes('PRODUCT_MODULE_ACCESS');
+      if (moduleName === 'Suppliers') return user.permissions.includes('SUPPLIER_MODULE_ACCESS');
+      if (moduleName === 'Batches') return user.permissions.includes('BATCH_MODULE_ACCESS');
+      if (moduleName === 'Locations') return user.permissions.includes('LOCATION_MODULE_ACCESS');
+      if (moduleName === 'QR Codes') return user.permissions.includes('QR_MODULE_ACCESS');
+      if (moduleName === 'User Management') return user.permissions.includes('USER_MANAGEMENT_ACCESS');
+      
+      // Alerts uses READ permissions as fallback (not explicitly defined as a separate module in backend yet)
+      if (moduleName === 'Alerts') return user.permissions.includes('PRODUCT_READ') || user.permissions.includes('BATCH_READ');
+      
+      // Reorders uses Supplier read as fallback
+      if (moduleName === 'Reorders') return user.permissions.includes('SUPPLIER_READ');
     }
 
-    // Role based module mapping
-    const roleModules: Record<string, string[]> = {
-      MANAGER: ['Dashboard', 'Products', 'Suppliers', 'User Management', 'Reorders'],
-      STAFF: ['Dashboard', 'Products', 'Batches', 'Inventory', 'QR Codes', 'Alerts', 'Suppliers']
-    };
-
-    return roleModules[role]?.includes(moduleName) || false;
+    return false;
   };
 
   const hasPermission = (permission: string): boolean => {
@@ -96,8 +102,8 @@ export const useAuth = () => {
     const role = user.role?.toUpperCase();
     if (role === 'ADMIN' || role === 'SUPER ADMIN' || role === 'SUPERADMIN') return true;
 
-    // Check user's specific permissions array first
     if (user.permissions && Array.isArray(user.permissions)) {
+      // Direct exact match
       if (user.permissions.includes(permission)) return true;
 
       // Group/friendly permission mappings
@@ -118,17 +124,11 @@ export const useAuth = () => {
       if (permission === 'Batch Read' && user.permissions.includes('BATCH_READ')) return true;
       if (permission === 'Inventory Read' && user.permissions.includes('LOCATION_READ')) return true;
       if (permission === 'Inventory Adjust' && (user.permissions.includes('LOCATION_ASSIGN_BATCH') || user.permissions.includes('LOCATION_MOVE_BATCH'))) return true;
-      if (permission === 'Alert Read' && user.permissions.includes('ALERT_VIEW')) return true;
-      if (permission === 'Alert Resolve' && user.permissions.includes('ALERT_RESOLVE')) return true;
+      if (permission === 'Alert Read' && (user.permissions.includes('PRODUCT_READ') || user.permissions.includes('BATCH_READ'))) return true;
+      if (permission === 'Alert Resolve' && user.permissions.includes('PRODUCT_UPDATE')) return true; // assuming resolve needs update perm
     }
 
-    // Role based permission mapping fallback
-    const rolePermissions: Record<string, string[]> = {
-      MANAGER: ['Product CRUD', 'Supplier CRUD', 'Product Read', 'Supplier Read', 'Reorder Read', 'Reorder CRUD'],
-      STAFF: ['Product Read', 'Batch Read', 'Inventory Read', 'Inventory Adjust', 'Alert Read', 'Alert Resolve', 'Supplier Read', 'Supplier CRUD']
-    };
-
-    return rolePermissions[role]?.includes(permission) || false;
+    return false;
   };
 
   return {

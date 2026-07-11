@@ -89,6 +89,10 @@ export interface DashboardStats {
   totalBatches: number;
   lowStockItems: number;
   activeAlerts: number;
+  totalSuppliers: number;
+  pendingReorders: number;
+  warehouseCount: number;
+  expiringSoon: number;
   recentActivity: {
     id: string;
     description: string;
@@ -149,6 +153,7 @@ export interface User {
   moduleVisibility?: string[];
   permissions?: Permission[];
   temporaryPassword?: string;
+  firstLogin?: boolean;
 }
 
 export interface Customer {

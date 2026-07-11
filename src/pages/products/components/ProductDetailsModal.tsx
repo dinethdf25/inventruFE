@@ -55,7 +55,7 @@ export const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalPro
         <div className="bg-surface/40 border border-border rounded-xl p-4 flex flex-col justify-between">
           <span className="text-xs font-semibold text-muted uppercase tracking-wider">Unit Price</span>
           <span className="text-xl font-black text-primary mt-2 block">
-            ${Number(product.unitPrice).toFixed(2)}
+            LKR {Number(product.unitPrice).toFixed(2)}
           </span>
         </div>
         <div className="bg-surface/40 border border-border rounded-xl p-4 flex flex-col justify-between">

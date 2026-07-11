@@ -16,6 +16,9 @@ import { QRCodesPage } from '@/pages/qrcodes/QRCodesPage';
 import { StaffPage } from '@/pages/users/StaffPage';
 import { RolePage } from '@/pages/users/RolePage';
 
+import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
+import { RequireModule } from './RequireModule';
+
 // No placeholders remaining
 
 export const AppRouter = () => {
@@ -24,19 +27,21 @@ export const AppRouter = () => {
       {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/change-password" element={<ChangePasswordPage />} />
-        <Route element={<AppShell><DashboardPage /></AppShell>} path="/dashboard" />
-        <Route element={<AppShell><ProductsPage /></AppShell>} path="/products" />
-        <Route element={<AppShell><SuppliersPage /></AppShell>} path="/suppliers" />
-        <Route element={<AppShell><LocationsPage /></AppShell>} path="/locations" />
-        <Route element={<AppShell><BatchesPage /></AppShell>} path="/batches" />
-        <Route element={<AppShell><AlertsPage /></AppShell>} path="/alerts" />
-        <Route element={<AppShell><ReordersPage /></AppShell>} path="/reorders" />
-        <Route element={<AppShell><QRCodesPage /></AppShell>} path="/qrcodes" />
-        <Route element={<AppShell><StaffPage /></AppShell>} path="/users/staff" />
+        
+        <Route element={<AppShell><RequireModule moduleName="Dashboard"><DashboardPage /></RequireModule></AppShell>} path="/dashboard" />
+        <Route element={<AppShell><RequireModule moduleName="Products"><ProductsPage /></RequireModule></AppShell>} path="/products" />
+        <Route element={<AppShell><RequireModule moduleName="Suppliers"><SuppliersPage /></RequireModule></AppShell>} path="/suppliers" />
+        <Route element={<AppShell><RequireModule moduleName="Locations"><LocationsPage /></RequireModule></AppShell>} path="/locations" />
+        <Route element={<AppShell><RequireModule moduleName="Batches"><BatchesPage /></RequireModule></AppShell>} path="/batches" />
+        <Route element={<AppShell><RequireModule moduleName="Alerts"><AlertsPage /></RequireModule></AppShell>} path="/alerts" />
+        <Route element={<AppShell><RequireModule moduleName="Reorders"><ReordersPage /></RequireModule></AppShell>} path="/reorders" />
+        <Route element={<AppShell><RequireModule moduleName="QR Codes"><QRCodesPage /></RequireModule></AppShell>} path="/qrcodes" />
+        <Route element={<AppShell><RequireModule moduleName="User Management"><StaffPage /></RequireModule></AppShell>} path="/users/staff" />
         {/* <Route element={<AppShell><RolePage /></AppShell>} path="/users/roles" /> */}
 
         {/* Redirect root to dashboard */}

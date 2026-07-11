@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Layers, TrendingDown, BellRing, AlertTriangle, ArrowRight, CheckCircle, Info, Activity, DollarSign, ShoppingCart } from 'lucide-react';
+import { Package, Layers, TrendingDown, BellRing, AlertTriangle, ArrowRight, CheckCircle, Info, Activity, DollarSign, ShoppingCart, Users, Home } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useBatches } from '@/hooks/useBatches';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useAlertStore } from '@/store/alert.store';
 import { StatCard } from '@/components/composite';
 import { Card } from '@/components/composite/Card';
@@ -11,8 +12,9 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 
 export const DashboardPage = () => {
-  const { stats, extraStats, expiringBatches, monthlyAnalytics, monthlyData, loading } = useDashboard();
+  const { stats, expiringBatches, monthlyAnalytics, monthlyData, loading } = useDashboard();
   const { batches, loading: batchesLoading } = useBatches();
+  const { totalCount } = useNotifications();
   const alerts = useAlertStore(state => state.alerts);
   const navigate = useNavigate();
 
@@ -88,12 +90,13 @@ export const DashboardPage = () => {
       {/* Metrics Row (8 Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Monthly Orders"
+          title="Monthly Sales"
           value={monthlyData?.monthlySales ?? 0}
           icon={<DollarSign size={20} />}
           iconColor="primary"
           loading={loading}
           href="/"
+          isCurrency={true}
         />
         <StatCard
           title="Monthly Orders"
@@ -104,12 +107,20 @@ export const DashboardPage = () => {
           href="/"
         />
         <StatCard
-          title="Monthly Notifications"
-          value={monthlyData?.monthlyNotifications ?? 0}
+          title="Total Notifications"
+          value={totalCount}
           icon={<BellRing size={24} />}
           iconColor="warning"
           loading={loading}
           href="/alerts"
+        />
+        <StatCard
+          title="Expiring Soon"
+          value={stats?.expiringSoon ?? 0}
+          icon={<AlertTriangle size={24} />}
+          iconColor="warning"
+          loading={loading}
+          href="/batches"
         />
         <StatCard
           title="Expired Batches"
@@ -131,7 +142,7 @@ export const DashboardPage = () => {
         />
         <StatCard
           title="Total Batches"
-          value={extraStats?.totalBatches || 0}
+          value={stats?.totalBatches || 0}
           icon={<Layers size={24} />}
           iconColor="accent"
           loading={loading}
@@ -150,12 +161,36 @@ export const DashboardPage = () => {
         />
         <StatCard
           title="Pending Reorders"
-          value={extraStats?.pendingReorders || 0}
+          value={stats?.pendingReorders || 0}
           icon={<Activity size={24} />}
           iconColor="primary"
           loading={loading}
           href="/reorders"
-          progress={extraStats?.pendingReorders ? 40 : 0}
+          progress={stats?.pendingReorders ? 40 : 0}
+        />
+        <StatCard
+          title="Total Suppliers"
+          value={stats?.totalSuppliers || 0}
+          icon={<Users size={24} />}
+          iconColor="primary"
+          loading={loading}
+          href="/suppliers"
+        />
+        <StatCard
+          title="Total Warehouses"
+          value={stats?.warehouseCount || 0}
+          icon={<Home size={24} />}
+          iconColor="primary"
+          loading={loading}
+          href="/locations"
+        />
+        <StatCard
+          title="Monthly Notifications"
+          value={monthlyData?.monthlyNotifications ?? 0}
+          icon={<BellRing size={24} />}
+          iconColor="warning"
+          loading={loading}
+          href="/alerts"
         />
       </div>
 
@@ -184,14 +219,14 @@ export const DashboardPage = () => {
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => `$${value / 1000}k`}
+                        tickFormatter={(value) => `LKR ${value / 1000}k`}
                         stroke="currentColor"
                         className="text-muted"
                         width={40}
                       />
                       <Tooltip
                         contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text)' }}
-                        formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Value']}
+                        formatter={(value: any) => [`LKR ${Number(value).toLocaleString()}`, 'Value']}
                       />
                       <Area type="monotone" dataKey="totalValue" stroke="currentColor" fillOpacity={1} fill="url(#colorValue)" className="text-primary" strokeWidth={2} />
                     </AreaChart>

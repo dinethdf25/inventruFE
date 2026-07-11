@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { DashboardStats } from '@/types';
 import { DashboardService } from '@/services/dashboard.service';
 import { BatchService } from '@/services/batch.service';
-import { ReorderService } from '@/services/reorder.service';
 import apiClient from '@/config/axios.config';
 import { API } from '@/constants/api.constants';
 import toast from 'react-hot-toast';
@@ -11,7 +10,6 @@ export const useDashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [monthlyAnalytics, setMonthlyAnalytics] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any | null>(null);
-  const [extraStats, setExtraStats] = useState({ totalBatches: 0, expiringBatches: 0, pendingReorders: 0 });
   const [expiringBatches, setExpiringBatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +18,7 @@ export const useDashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const [overviewData, monthlyRes, bCount, expCount, reorderCount, expBatches] = await Promise.all([
+      const [overviewData, monthlyRes, expBatches] = await Promise.all([
         DashboardService.getOverview().catch((err) => {
           console.error('Failed to load overview data', err);
           return null;
@@ -29,18 +27,6 @@ export const useDashboard = () => {
           console.error('Failed to load monthly analytics data', err);
           return { data: null };
         }),
-        BatchService.getCount().catch((err) => {
-          console.error('Failed to load batch count', err);
-          return 0;
-        }),
-        BatchService.getExpiringCount().catch((err) => {
-          console.error('Failed to load expiring batch count', err);
-          return 0;
-        }),
-        ReorderService.getPendingCount().catch((err) => {
-          console.error('Failed to load pending reorders count', err);
-          return 0;
-        }),
         BatchService.getExpiringSoon(7).catch((err) => {
           console.error('Failed to load expiring soon batches', err);
           return [];
@@ -48,8 +34,6 @@ export const useDashboard = () => {
       ]);
 
       const responseData = monthlyRes?.data;
-      console.log("Show the Syste thigsn ")
-      console.log(responseData)
       const rawMonthly = responseData && typeof responseData === 'object'
         ? (responseData.data !== undefined ? responseData.data : (responseData.success && responseData.data ? responseData.data : responseData))
         : null;
@@ -66,10 +50,9 @@ export const useDashboard = () => {
         setMonthlyAnalytics(rawMonthly || []);
       }
 
-      setExtraStats({ totalBatches: bCount as number, expiringBatches: expCount as number, pendingReorders: reorderCount as number });
       setExpiringBatches(expBatches as any[]);
     } catch (err: any) {
-      console.log("Show the Syste thigsn ")
+      console.error(err);
       setError(err.message || 'Failed to load dashboard data');
       toast.error('Failed to connect to backend for dashboard data');
     } finally {
@@ -85,7 +68,6 @@ export const useDashboard = () => {
     stats,
     monthlyAnalytics,
     monthlyData,
-    extraStats,
     expiringBatches,
     loading,
     error,

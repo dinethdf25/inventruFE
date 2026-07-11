@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 
 export const AlertsPage = () => {
-  const { notifications, loading, fetchNotifications, markAsRead } = useNotifications();
+  const { notifications, totalCount, loading, fetchNotifications, markAsRead } = useNotifications();
   
   const [filter, setFilter] = useState<'ALL' | 'UNREAD'>('UNREAD');
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'EXPIRY' | 'STOCK' | 'SYSTEM'>('ALL');
@@ -151,7 +151,7 @@ export const AlertsPage = () => {
                 className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${filter === 'ALL' ? 'bg-card shadow-sm text-text' : 'text-muted hover:text-text'}`}
                 onClick={() => setFilter('ALL')}
               >
-                All Alerts
+                All Alerts ({totalCount})
               </button>
             </div>
           </div>

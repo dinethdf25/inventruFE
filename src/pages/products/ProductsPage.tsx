@@ -156,7 +156,7 @@ export const ProductsPage = () => {
       key: 'unitPrice',
       label: 'Unit Price',
       sortable: true,
-      render: (value) => `$${Number(value).toFixed(2)}`
+      render: (value) => `LKR ${Number(value).toFixed(2)}`
     },
     {
       key: 'reorderLevel',
@@ -384,7 +384,7 @@ export const ProductsPage = () => {
                 <div className="mt-auto pt-4 border-t border-border border-dashed">
                   <div className="flex flex-wrap justify-between items-baseline gap-x-2 gap-y-1 mb-2">
                     <span className="text-2xl font-bold text-text truncate">
-                      ${Number(product.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      LKR {Number(product.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                     <span className={`text-sm font-semibold shrink-0 ${stock <= reorder ? 'text-danger' : 'text-success'}`}>
                       {stock} in stock

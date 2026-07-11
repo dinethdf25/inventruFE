@@ -13,6 +13,10 @@ export const DashboardService = {
       totalBatches: raw.batch?.totalBatches ?? 0,
       lowStockItems: raw.inventory?.lowStockProducts ?? 0,
       activeAlerts: raw.notification?.unreadNotifications ?? 0,
+      totalSuppliers: raw.supplier?.totalSuppliers ?? 0,
+      pendingReorders: raw.reorder?.pendingReorders ?? 0,
+      warehouseCount: raw.location?.warehouseCount ?? 0,
+      expiringSoon: raw.batch?.expiringSoon ?? 0,
       recentActivity: raw.recentActivity || []
     };
   },

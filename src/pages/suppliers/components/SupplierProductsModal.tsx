@@ -210,7 +210,7 @@ export const SupplierProductsModal = ({ supplier, onClose }: SupplierProductsMod
                     </span>
                   ) : p.unitPrice !== undefined ? (
                     <span className="text-xs px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded-md font-medium">
-                      ${Number(p.unitPrice).toFixed(2)}
+                      LKR {Number(p.unitPrice).toFixed(2)}
                     </span>
                   ) : null}
                 </div>
