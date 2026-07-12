@@ -24,7 +24,7 @@ export const ReduceStockModal = ({ isOpen, onClose, onSubmit, batch }: ReduceSto
   const handleFormSubmit = async (data: any) => {
     if (!batch?.id) return;
     setIsSubmitting(true);
-    const success = await onSubmit(batch.id, data.soldQuantity);
+    const success = await onSubmit(String(batch.id), data.soldQuantity);
     setIsSubmitting(false);
     if (success) {
       reset();
