@@ -8,7 +8,7 @@ export interface Product {
 }
 
 export interface Batch {
-  id?: string;
+  id?: string | number;
   productId: string;
   productName?: string;
   batchNumber: string;
@@ -19,8 +19,7 @@ export interface Batch {
   supplierId: number;
   locationId: number;
   purchasePrice: number;
-  receivedDate?: string; // Might be mapped from backend or not needed
-  status?: 'FRESH' | 'ACTIVE' | 'EXPIRING_SOON' | 'EXPIRED' | 'SPOILED' | 'RECALLED'; // Computed frontend side or returned by backend
+  status?: 'FRESH' | 'ACTIVE' | 'EXPIRING_SOON' | 'EXPIRED' | 'SPOILED' | 'RECALLED';
   locationCode?: string;
   supplierName?: string;
 }

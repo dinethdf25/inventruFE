@@ -231,15 +231,17 @@ export const BatchesPage = () => {
       label: 'Batch No.',
       sortable: true,
     },
-    {
-      key: 'supplierName',
-      label: 'Supplier',
-      sortable: true,
-    },
+
     { 
       key: 'quantity', 
       label: 'Qty', 
-      sortable: true 
+      sortable: true,
+      render: (value, row: Batch) => (
+        <span>
+          <span className="font-bold text-text">{row.remainingQuantity !== undefined ? row.remainingQuantity : value}</span>
+          <span className="text-muted text-xs ml-1">/ {value}</span>
+        </span>
+      )
     },
     { 
       key: 'expiryDate', 

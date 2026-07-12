@@ -91,13 +91,13 @@ export const useBatches = () => {
 
   const allocateBatch = async (productId: string, quantity: number) => {
     try {
-      await BatchService.allocate(productId, quantity);
+      const result = await BatchService.allocate(productId, quantity);
       await fetchBatches();
       toast.success('Stock allocated successfully');
-      return true;
+      return result;
     } catch (err: any) {
       handleBatchError(err.response?.data || err);
-      return false;
+      return null;
     }
   };
 

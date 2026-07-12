@@ -130,26 +130,7 @@ export const DashboardPage = () => {
           loading={loading}
           href="/batches"
         />
-        <StatCard
-          title="Total Products"
-          value={stats?.totalProducts || 0}
-          icon={<Package size={24} />}
-          iconColor="primary"
-          loading={loading}
-          href="/products"
-          progress={75}
-          sparklineData={[12, 14, 13, 16, 15, 18, 20]}
-        />
-        <StatCard
-          title="Total Batches"
-          value={stats?.totalBatches || 0}
-          icon={<Layers size={24} />}
-          iconColor="accent"
-          loading={loading}
-          href="/batches"
-          progress={60}
-          sparklineData={[30, 35, 32, 40, 38, 42, 45]}
-        />
+
         <StatCard
           title="Low Stock Items"
           value={monthlyData?.lowStockProducts ?? stats?.lowStockItems ?? 0}
@@ -165,7 +146,7 @@ export const DashboardPage = () => {
           icon={<Activity size={24} />}
           iconColor="primary"
           loading={loading}
-          href="/reorders"
+          href="/"
           progress={stats?.pendingReorders ? 40 : 0}
         />
         <StatCard
@@ -191,6 +172,26 @@ export const DashboardPage = () => {
           iconColor="warning"
           loading={loading}
           href="/alerts"
+        />
+        <StatCard
+          title="Total Products"
+          value={stats?.totalProducts || 0}
+          icon={<Package size={24} />}
+          iconColor="primary"
+          loading={loading}
+          href="/products"
+          progress={75}
+          sparklineData={[12, 14, 13, 16, 15, 18, 20]}
+        />
+        <StatCard
+          title="Total Batches"
+          value={stats?.totalBatches || 0}
+          icon={<Layers size={24} />}
+          iconColor="accent"
+          loading={loading}
+          href="/batches"
+          progress={60}
+          sparklineData={[30, 35, 32, 40, 38, 42, 45]}
         />
       </div>
 
