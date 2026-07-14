@@ -201,15 +201,17 @@ export const StaffPage = () => {
               <Unlock size={18} />
             </Button>
           )}
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => handleDeleteClick(row)} 
-            className="text-danger hover:text-danger hover:bg-danger/10 transition-colors"
-            title="Delete"
-          >
-            <Trash2 size={18} />
-          </Button>
+          {row.role !== 'ADMIN' && row.role !== 'SUPERADMIN' && row.role !== 'SUPER ADMIN' && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleDeleteClick(row)} 
+              className="text-danger hover:text-danger hover:bg-danger/10 transition-colors"
+              title="Delete"
+            >
+              <Trash2 size={18} />
+            </Button>
+          )}
         </div>
       )
     },

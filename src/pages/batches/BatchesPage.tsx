@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Trash2, Layers, AlertTriangle, Clock, QrCode, Camera, Undo2, MapPin } from 'lucide-react';
+import { Plus, Trash2, Layers, AlertTriangle, Clock, QrCode, Camera, Undo2, MapPin, Building2 } from 'lucide-react';
 import { useBatches } from '@/hooks/useBatches';
 import { useProducts } from '@/hooks/useProducts';
 import { useLocations } from '@/hooks/useLocations';
@@ -17,6 +17,7 @@ import { QRScanModal } from './components/QRScanModal';
 import { AllocateBatchModal } from './components/AllocateBatchModal';
 import { ReduceStockModal } from './components/ReduceStockModal';
 import { AssignLocationModal } from './components/AssignLocationModal';
+import { BatchLocationsModal } from './components/BatchLocationsModal';
 
 export const BatchesPage = () => {
   const { batches, loading: batchesLoading, createBatch, spoilBatch, recallBatch, allocateBatch, reduceStock } = useBatches();
@@ -38,6 +39,7 @@ export const BatchesPage = () => {
   const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
   const [isReduceModalOpen, setIsReduceModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isLocationsModalOpen, setIsLocationsModalOpen] = useState(false);
   
   // Selected batch for actions
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
@@ -170,6 +172,15 @@ export const BatchesPage = () => {
             title="Batch QR Code"
           >
             <QrCode size={18} />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => { setSelectedBatch(row); setIsLocationsModalOpen(true); }} 
+            className="text-primary hover:bg-primary/10 transition-colors" 
+            title="View Locations"
+          >
+            <Building2 size={18} />
           </Button>
           {row.status !== 'EXPIRED' && row.status !== 'SPOILED' && row.status !== 'RECALLED' && (
             <>
@@ -435,7 +446,16 @@ export const BatchesPage = () => {
       <AssignLocationModal
         isOpen={isAssignModalOpen}
         onClose={() => setIsAssignModalOpen(false)}
-        onSubmit={assignBatch}
+        onSubmit={async (batchId, locationId, quantity) => {
+          return assignBatch(batchId, locationId, quantity);
+        }}
+        batch={selectedBatch}
+      />
+
+      {/* View Batch Locations Modal */}
+      <BatchLocationsModal
+        isOpen={isLocationsModalOpen}
+        onClose={() => setIsLocationsModalOpen(false)}
         batch={selectedBatch}
       />
     </div>

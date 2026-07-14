@@ -2,13 +2,11 @@ import axios from 'axios';
 import { useAuthStore } from '@/store/auth.store';
 
 const apiClient = axios.create({
-  // Use env variable if provided (e.g. VITE_API_URL), otherwise default to the local backend
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+  baseURL: 'http://localhost:8080',
   headers: { 'Content-Type': 'application/json' },
-  timeout: 10000, // 10 second timeout — avoids requests hanging if BE is offline
+  timeout: 10000,
 });
 
-// REQUEST: Attach JWT from store
 apiClient.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
   if (token) {

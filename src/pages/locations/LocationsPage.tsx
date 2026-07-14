@@ -120,10 +120,10 @@ export const LocationsPage = () => {
 
     setIsSubmitting(true);
     const success = await moveBatch(
-      selectedBatchId,
-      movingFromLocation.id!,
-      selectedToLocationId,
-      moveQuantity
+      Number(selectedBatchId),
+      Number(movingFromLocation.id),
+      Number(selectedToLocationId),
+      Number(moveQuantity)
     );
     setIsSubmitting(false);
     if (success) {
